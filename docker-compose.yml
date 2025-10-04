@@ -1,0 +1,34 @@
+services:
+
+  node-service:
+    build:
+      context: .
+      dockerfile: node/Dockerfile
+    container_name: node-Website-container  # Simplified container name
+    restart: always
+    ports:
+      - "8000:8000"  # Map internal port 3000 to host port 3001
+    networks:
+      - app_network  # Updated network name for consistency
+
+  flask-service:
+    build:
+      context: .
+      dockerfile: python_yes/Dockerfile
+    container_name: flask-python-container
+    ports:
+      - "8001:8001"
+    environment:
+      - FLASK_ENV=development
+    networks:
+      - app_network
+    volumes:
+      - .:/app
+    restart: always
+  
+volumes:
+  mysql_volume:  # Persistent volume for MySQL data
+
+networks:
+  app_network:  # Updated network name to make it tutorial-friendly
+    driver: bridge
