@@ -23,8 +23,22 @@ os.chdir('C:/Coding/PythonScripts/Data') #c pour mon pc ça, change de directoir
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
-filepath = 'KOI.csv' #ex: KOI/TOI/K2 cumulative table data csv file path
-df = pd.read_csv(filepath, skiprows=31, usecols=[3,10,11,13,14,15,18,24,26])
+filepath = 'KOICopy.csv' #ex: KOI/TOI/K2 cumulative table data csv file path
+
+binary_replace = {'CANDIDATE':'True', 
+                  'FALSE POSITIVE': 'False', 
+                  'NOT DISPOSITIONED': 'False', 
+                  'CONFIRMED': 'True',
+                  'REFUTED': 'False',
+                  'APC': 'False',
+                  'CP': 'True',
+                  'FA': 'False',
+                  'KP': 'True',
+                  'PC': 'True'}
+
+df = pd.read_csv(filepath, skiprows=31, usecols=[3,5,10,11,12,13,14,15,16,17,18,21,22,23,24,25])
+df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+
 
 # Inspection
 print(f"shape: {df.shape}\n") #rows, columns
@@ -34,7 +48,7 @@ df.head()
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
 
-features = ["koi_period", "koi_time0bk", "koi_duration", "koi_depth", "koi_prad", "koi_model_snr", "ra", "koi_kepmag"]   # replace with your numeric columns that you want to keep
+features = ["koi_score", "koi_period", "koi_time0bk", "koi_impact", "koi_duration", "koi_depth", "koi_prad", "koi_teq", "koi_insol", "koi_model_snr", "koi_steff", "koi_slogg", "koi_srad", "ra", "dec"]   # replace with your numeric columns that you want to keep
 label_col = "koi_disposition"                   # replace with your target column that you want your model to predict
 
 
@@ -120,7 +134,7 @@ class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
 model = SimpleMLP(
     input_dim=X.shape[1], #number of features in input data
-    hidden=[256,128,64],  #size of hidden layers, can be changed
+    hidden=[512,256,128,64],  #size of hidden layers, can be changed
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     ).to(DEVICE)
 
@@ -173,6 +187,7 @@ def evaluate(model, loader, criterion):
     acc = accuracy_score(trues, preds) #compute accuracy
     return running_loss / len(loader.dataset), acc #average loss and accuracy over the evaluation
 
+
 #-----------------------------------------------------------------------------------------------------------------------
 #Model training and evaluation
 
@@ -186,7 +201,7 @@ best_val_loss = float("inf")  # start with "infinity" so any real loss will be s
 # 2) Training loop over epochs
 # -----------------------------
 
-for epoch in range(1, 31):   # 30 epochs example
+for epoch in range(1, 101):   # 30 epochs example
     # --- Train on all batches in the training set ---
     train_loss = train_one_epoch(model, train_loader, optimizer, criterion)
     
@@ -235,11 +250,10 @@ print(classification_report(trues, preds, target_names=le.classes_))  # precisio
 # 6) Predicting on a new single row
 # -----------------------------
 
-exlist = [10797460,'K00752.02','Kepler-227 c','CONFIRMED','CANDIDATE',0.9690,0,0,0,0,54.418382700,162.5138400,0.5860,4.50700,8.7480e+02,2.83,443.0,9.11,25.80,2,'q1_q17_dr25_tce',5455.00,4.467,0.9270,291.934230,48.141651,15.347]
+exlist = [10797460,'K00752.02','Kepler-227 c',True,True,0.9690,0,0,0,0,54.418382700,162.5138400,0.5860,4.50700,8.7480e+02,2.83,443.0,9.11,25.80,2,'q1_q17_dr25_tce',5455.00,4.467,0.9270,291.934230,48.141651,15.347]
 
 # 1) Prepare new row features in the same order as training features
-row = np.array([[exlist[10],exlist[11],None,exlist[14],exlist[15],exlist[18],exlist[24],exlist[26]]], dtype=np.float32)
-
+row = np.array([[exlist[i] for i in [3,5,10,11,12,13,14,15,16,17,21,22,23,24,25]]], dtype=np.float32)
 
 # 2) Scale using the saved StandardScaler (same as training)
 row_scaled = scaler.transform(row)
@@ -258,7 +272,12 @@ with torch.no_grad():
 print("Predicted class:", human_label)
 print(exlist[3])
 
+with open('KOICopy.csv','r') as file:
+    n = 0
+    for line in file:
+        n+=1
 
+print('amount of lines: ', n)
 
 #----------------------------------------------------------------------
 #HOW TO INTERPRET THE DATA
