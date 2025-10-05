@@ -16,8 +16,8 @@ import cleaning_library as cl
 from rich import print
 
 
-columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
-columnKepler = [
+#columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
+StandardizedColumnNames = [
     'Confirmation',       # koi_disposition
     'OrbitalPeriod',      # koi_period
     'OPup',               # koi_period_err1
@@ -62,29 +62,16 @@ columnKepler = [
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
-
-df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
-df.columns = columnKepler
-
-dfy = df.iloc[:,0]
-dffeat = df.iloc[:,1:]
-dffeatclean = cl.clean_array(dffeat)
-
-#print('dfy',dfy)
-#print('dffeat',dffeat)
-#print('dffeatclean',dffeatclean)
-
-print(type(dffeat))
-print(type(dfy),type(dffeatclean))
-
-df = pd.concat([dfy,dffeatclean],axis=1)
+def convertToCSV(filepath):
+    df = pd.DataFrame(data)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
 
+def setup(df,columnnames)
+    features = columnnames[1:]  # replace with your numeric columns that you want to keep
+    label_col = columnnames[0]                  # replace with your target column that you want your model to predict
 
-features = columnnames[1:]  # replace with your numeric columns that you want to keep
-label_col = columnnames[0]                  # replace with your target column that you want your model to predict
 
 
 # numeric features -> StandardScaler
