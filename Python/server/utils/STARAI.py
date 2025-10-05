@@ -63,7 +63,7 @@ columnKepler = [
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
-df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
+df = pd.read_csv('utils/Data/kepler.csv',skiprows=45)
 df.columns = columnKepler
 
 
@@ -72,6 +72,8 @@ df.columns = columnKepler
 print(df.columns)
 #print(df)
 
+print(df.iloc[12].tolist(),df.iloc[24].tolist(),df.iloc[37].tolist())
+
 dfc = cl.clean_array(df)
 print(dfc.columns)
 #print(dfc)
@@ -79,7 +81,6 @@ print(dfc.columns)
 df = dfc
 
 print(type(df))
-
 
 
 binary_replace = {'CANDIDATE':'True', 
@@ -95,6 +96,8 @@ binary_replace = {'CANDIDATE':'True',
                   'PC': 'True'}
 
 df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up

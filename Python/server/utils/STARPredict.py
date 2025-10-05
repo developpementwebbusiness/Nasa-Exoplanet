@@ -63,3 +63,46 @@ def predict_rows(rows):
         prob_scores = probs.max(dim=1).values.numpy()
 
     return labels,prob_scores
+
+
+rows = [[
+    np.float64(2.701287801),
+    np.float64(5.634e-06),
+    np.float64(-5.634e-06),
+    np.float64(170.69579),
+    np.float64(0.00164),
+    np.float64(-0.00164),
+    np.float64(1.016),
+    np.float64(3.967),
+    np.float64(-0.059),
+    np.float64(3.3827),
+    np.float64(0.0892),
+    np.float64(-0.0892),
+    np.float64(860.4),
+    np.float64(20.9),
+    np.float64(-20.9),
+    np.float64(6.54),
+    np.float64(1.64),
+    np.float64(-0.75),
+    np.float64(1222.0),
+    np.float64(527.81),
+    np.float64(411.33),
+    np.float64(-166.35),
+    np.float64(48.3),
+    np.float64(5550.0),
+    np.float64(182.0),
+    np.float64(-182.0),
+    np.float64(4.468),
+    np.float64(0.091),
+    np.float64(-0.169),
+    np.float64(0.91),
+    np.float64(0.228),
+    np.float64(-0.105),
+    np.float64(297.92365),
+    np.float64(48.777321),
+    np.float64(15.54)
+]]
+
+
+
+print(predict_rows(rows))
