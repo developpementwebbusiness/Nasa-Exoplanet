@@ -1,6 +1,4 @@
-import os
 import joblib
-import random
 import numpy as np
 import pandas as pd
 import torch
@@ -10,14 +8,10 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
-import matplotlib.pyplot as plt
-import seaborn as sns
-from rich import print
+import PredictiveModel_AI as ai
+import torch.nn.functional as F
 
 #pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126 #pour installer pytorch avec cuda (gpu) si besoin
-
-os.chdir('C:/Coding/PythonScripts/Data') #c pour mon pc ça, change de directoire si besoin
-
 
 scaler = joblib.load("scaler.pkl")
 le = joblib.load("label_encoder.pkl")
@@ -65,8 +59,14 @@ def predict_rows(rows):
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
 
     with torch.no_grad():
-        logits = model(X_tensor)
-        preds = logits.argmax(dim=1).numpy()
-        labels = le.inverse_transform(preds)
+        logits = model(X_tensor) #unprocessed  output data
+        probs = F.softmax(logits,dim=1) #probability convert
+        preds = logits.argmax(dim=1).numpy() #gives max
+        labels = le.inverse_transform(preds) #transforms the data into True or False
+        conf_scores = probs.max(dim=1).values.np()
 
-    return labels
+    return labels,conf_scores
+
+rows = [[0.1, 0.3, 0.5, 0.2, 0.9, 0.7, 0.1, 0.05]]
+labels, confidences = predict_rows(rows)
+print(labels[0], confidences[0])

@@ -16,12 +16,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from rich import print
 
-#pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126 #pour installer pytorch avec cuda (gpu) si besoin
-
-os.chdir('C:/Coding/PythonScripts/Data') #c pour mon pc ça, change de directoire si besoin
-
-#https://www.spaceappschallenge.org/2025/challenges/a-world-away-hunting-for-exoplanets-with-ai/?tab=resources lien du challenge avec les datasets
-
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
@@ -63,16 +57,6 @@ df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x
 features = ['OrbitalPeriod','PlanetRadius','InsolationFlux','EquilibriumTemp','StellarEffectiveTemp','StellarRadius','RA','Dec']   # replace with your numeric columns that you want to keep
 label_col = 'Confirmation'                   # replace with your target column that you want your model to predict
 
-
-'''
-imputer = IterativeImputer()
-df[features] = imputer.fit_transform(df[features])
-'''
-
-print('shape ',df.shape[0])
-df = df[features + [label_col]].dropna() # keep only relevant columns without NaN values
-print('shape dropped',df.shape[0])
-
 # encode text labels to integers (0..K-1)
 le = LabelEncoder()
 Y = le.fit_transform(df[label_col].values)   # keep `le` to invert later
@@ -83,9 +67,6 @@ X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne
 
 joblib.dump(scaler, "scaler.pkl") # save the scaler for later use
 joblib.dump(le, "label_encoder.pkl") # save the label encoder for later use
-
-print("pd serieis",pd.Series(Y).value_counts())
-
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data split
@@ -99,13 +80,7 @@ X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random
 # split temp into val (15%) and test (15%)
 X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=0.5, random_state=42,stratify=Y_temp) # 15% XYval, 15% XYtest (Cuz 50% of 30% is 15%)
 
-#ONLY KEEP STRATIFY FOR CLASSIFICATION AI
-
 #70% training data, 15% validation data, 15% test data
-
-#training set is used for gradient descent and weight updates (watch 3Blue1Brown video on youtube if you don't know what that means)
-#validation set is used to evaluate the model during training (ex: after each epoch) to tune hyperparameters and avoid overfitting (to avoid the model just memorizing patterns in the training data)
-#test set is used to evaluate the model after training (to see how well it generalizes to unseen data)
 
 # convert to tensors
 X_train = torch.tensor(X_train, dtype=torch.float32)
@@ -115,8 +90,7 @@ Y_val   = torch.tensor(Y_val, dtype=torch.long)
 X_test  = torch.tensor(X_test, dtype=torch.float32)
 Y_test  = torch.tensor(Y_test, dtype=torch.long)
 
-#long is a datatype in for integers 
-
+#DataLoaders
 train_loader = DataLoader(TensorDataset(X_train, Y_train), batch_size=64, shuffle=True) #feed data in batches of 64, shuffle to randomize order each epoch
 val_loader   = DataLoader(TensorDataset(X_val, Y_val), batch_size=128, shuffle=False)
 test_loader = DataLoader(TensorDataset(X_test, Y_test), batch_size=128, shuffle=False)
@@ -161,16 +135,19 @@ model = SimpleMLP(
     ).to(DEVICE)
 
 #-----------------------------------------------------------------------------------------------------------------------
-#Training functions
+#Weights
 
-# If classes are imbalanced compute weights:
-class_counts = np.bincount(Y)    # numpy counts the occurrences of each class in Y
-class_weights = torch.tensor(1.0 / (class_counts + 1e-8), dtype=torch.float32).to(DEVICE) #gives more weight to minority classes to help the model learn them better
-class_weights = class_weights / class_weights.sum() * len(class_weights)
+class_counts = np.bincount(Y)    # numpy counts the occurrences of each class in Y with position indicating the class 
+class_weights = torch.tensor(1.0 / (class_counts + 1e-8), dtype=torch.float32).to(DEVICE) # gives more weight to minority classes to help the model learn them better
+class_weights = class_weights / class_weights.sum() * len(class_weights) # normalize the weights around 1
+
 #When computing the loss, misclassifying a minority class will incur a higher penalty than misclassifying a majority class
 
-criterion = nn.CrossEntropyLoss(weight=class_weights)   #multiplies the loss of each class by its weight
-optimizer = optim.Adam(model.parameters(), lr=1e-3) #Adam optimizer for weight adjustment, lr=learning rate
+criterion = nn.CrossEntropyLoss(weight=class_weights)   #multiplies the loss of each class by the weights defined previously
+optimizer = optim.Adam(model.parameters(), lr=1e-3)  #Adam optimizer for weight adjustment, lr=learning rate
+
+#-----------------------------------------------------------------------------------------------------------------------
+#Training functions
 
 def train_one_epoch(model, loader, optimizer, criterion):
     #model: the neural network,loader: DataLoader for training data (ex: train_loader), optimizer: optimization algorithm, criterion: loss function
@@ -209,138 +186,3 @@ def evaluate(model, loader, criterion):
     preds = np.concatenate(preds); trues = np.concatenate(trues) #sqish lists into single arrays
     acc = accuracy_score(trues, preds) #compute accuracy
     return running_loss / len(loader.dataset), acc #average loss and accuracy over the evaluation
-
-
-#-----------------------------------------------------------------------------------------------------------------------
-#Model training and evaluation
-
-# -----------------------------
-# 1) Initialize best validation loss
-# -----------------------------
-
-best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
-
-# -----------------------------
-# 2) Training loop over epochs
-# -----------------------------
-
-for epoch in range(1, 201):   # 30 epochs example
-    # --- Train on all batches in the training set ---
-    train_loss = train_one_epoch(model, train_loader, optimizer, criterion) 
-    
-    # --- Evaluate on validation set (no weight updates) ---
-    val_loss, val_acc = evaluate(model, val_loader, criterion)
-    
-    # --- Check if this is the best model so far ---
-    if val_loss < best_val_loss:
-        best_val_loss = val_loss
-        # Save the model's weights to disk
-        torch.save(model.state_dict(), "STAR_AI.pth")   # checkpoint
-    
-    # --- Print progress for this epoch ---
-    print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
-
-# -----------------------------
-# 3) Load the best model after training
-# -----------------------------
-
-# This ensures we use the model that performed best on validation data
-model.load_state_dict(torch.load("STAR_AI.pth", map_location=DEVICE))
-
-# -----------------------------
-# 4) Evaluate on test data
-# -----------------------------
-
-model.eval()  #same idea as the other times we called our Datakoaders
-preds, trues = [], []
-with torch.no_grad():
-    for Xb, yb in test_loader:
-        Xb, yb = Xb.to(DEVICE), yb.to(DEVICE)
-        logits = model(Xb)
-        pred = logits.argmax(dim=1).cpu().numpy()
-        preds.append(pred) ; trues.append(yb.cpu().numpy())
-preds = np.concatenate(preds)
-trues = np.concatenate(trues)
-
-# -----------------------------
-# 5) Classification metrics
-# -----------------------------
-
-from sklearn.metrics import classification_report
-labels = np.unique(trues)
-print(classification_report(trues, preds, labels=labels, target_names=le.inverse_transform(labels)))
-
-# -----------------------------
-# 6) Predicting on a new single row
-# -----------------------------
-
-exlist = [54.4183827,2.83,443.0,9.11,5455.0,0.927,291.93423,48.141651]
-
-# 1) Prepare new row features in the same order as training features
-row = np.array([exlist], dtype=np.float32)
-
-# 2) Scale using the saved StandardScaler (same as training)
-row_scaled = scaler.transform(row)
-
-# 3) Convert to PyTorch tensor and move to correct device
-t = torch.tensor(row_scaled, dtype=torch.float32).to(DEVICE)
-
-# 4) Forward pass in evaluation mode
-model.eval()
-with torch.no_grad():
-    logits = model(t)                    # get raw outputs
-    pred = logits.argmax(dim=1).cpu().item()  # predicted class index
-    human_label = le.inverse_transform([pred])[0]  # convert back to original class name
-
-# 5) Print the prediction
-print("Predicted class:", human_label)
-
-#----------------------------------------------------------------------
-#HOW TO INTERPRET THE DATA
-
-#EX: This is a sickit-learn classification report
-'''
-
-                  precision   recall   f1-score   support
-
-     CANDIDATE       0.38      0.55      0.45       282    
-     CONFIRMED       0.55      0.71      0.62       411     
-FALSE POSITIVE       0.86      0.55      0.67       687
-
-      accuracy                           0.60      1380
-     macro avg       0.60      0.60      0.58      1380
-  weighted avg       0.67      0.60      0.61      1380
-
-precision = TP/(TP+FP) “When I say it’s positive, how often am I right?”
-recall = TP/(TP+FN) “Of all the positives out there, how many did I catch?”
-f1 score = f1 score = 2 * (precision * recall) / (precision + recall) (0.7> is good) harmonic mean good for class imbalanced data-sets
-support = nb of items
-'''
-
-#-----------------------------------------------------------------------
-#WHAT IS WEIGHT AND BIAS
-
-'''
-
-For a particular neuron activation function of a neuron on the first hidden layer: (x,y) -> x layer yth element
-
-a1,i = f(w0,0*a0,1+...+w0,n*a0,n+b0)
-
-'''
-
-
-#-----------------------------------------------------------------------
-#WHAT IS THE COST FUNCTION
-
-'''
-
-It adds up the squares of the differences between each of the trash output activations and the values you want them to have
-
-''' 
-
-#-----------------------------------------------------------------------
-#WHAT IS A SEED, AND WHY IS IT IMPORTANT??
-'''
-The seed is responsible for determining where the AI's gradient descent will start.
-
-'''
