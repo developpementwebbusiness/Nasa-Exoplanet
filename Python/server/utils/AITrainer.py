@@ -1,3 +1,4 @@
+import os
 import joblib
 import random
 import numpy as np
@@ -10,6 +11,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
+
+os.chdir('Python/server/utils/Data')
 
 try:
     from . import cleaning_library as cl
@@ -83,8 +86,8 @@ def setup(df,AIname):
 
     Y = scalencode[f'{AIname}le'].fit_transform(df[label_col].values)   #transforms labels to integers
 
-    joblib.dump(scalencode[f'{AIname}scaler'], f"utils/Data/AI/{AIname}/scaler.pkl") # save the scaler for later use
-    joblib.dump(scalencode[f'{AIname}le'], f"utils/Data/AI/{AIname}/label_encoder.pkl") # save the label encoder for later use
+    joblib.dump(scalencode[f'{AIname}scaler'], f"AI/{AIname}/scaler.pkl") # save the scaler for later use
+    joblib.dump(scalencode[f'{AIname}le'], f"AI/{AIname}/label_encoder.pkl") # save the label encoder for later use
 
     # split data into train (70%), temp (30%)
     X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random_state=42,stratify=Y) # 70% XYtrain, 30% XYtemp, 42 for reproducibility (imagine a minecraft seed)
@@ -205,7 +208,7 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimize
     DEVICE = devicesel()
     
     best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
-    AIfilepath = f"Python/server/utils/Data/AI/{AIname}/{AIname}.pth"
+    AIfilepath = f"AI/{AIname}/{AIname}.pth"
 
     for epoch in range(epochs):   # 30 epochs example
         # --- Train on all batches in the training set ---
@@ -264,9 +267,9 @@ def AITRAIN(data,hiddenlayers=[128,64],epochs=100,AIname='NewAI'):
         criterion=criterion
     )
 
-    model_path = f"utils/Data/AI/{AIname}/{AIname}.pth"
-    scaler_path = f"utils/Data/AI/{AIname}/scaler.pkl"
-    le_path = f"utils/Data/AI/{AIname}/label_encoder.pkl"
+    model_path = f"AI/{AIname}/{AIname}.pth"
+    scaler_path = f"AI/{AIname}/scaler.pkl"
+    le_path = f"AI/{AIname}/label_encoder.pkl"
 
     return classif, model_path, scaler_path, le_path
 
