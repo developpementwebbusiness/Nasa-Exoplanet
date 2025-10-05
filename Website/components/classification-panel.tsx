@@ -126,7 +126,7 @@ export function ClassificationPanel({
 
   const confidence = currentPrediction
     ? (
-        (currentPrediction.confidence || currentPrediction.probability || 0) *
+        (currentPrediction.score || currentPrediction.confidence || currentPrediction.probability || 0) *
         100
       ).toFixed(2)
     : "N/A";

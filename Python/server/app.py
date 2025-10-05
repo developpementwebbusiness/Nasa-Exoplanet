@@ -112,6 +112,7 @@ async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None,
             
             for j, exoplanet in enumerate(donnees.data):
                 features = []
+                # Extract ONLY the 35 features (ignore 'name' and any other extra fields)
                 for key in keys_order:
                     value = exoplanet.get(key)
                     if value is None:
@@ -122,7 +123,11 @@ async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None,
                         except (ValueError, TypeError):
                             features.append(0.0)
                 
+                # Debug: log if mismatch
                 if len(features) != 35:
+                    logger.error(f"Sample {j}: Expected 35 features, got {len(features)}")
+                    logger.error(f"Exoplanet keys: {list(exoplanet.keys())}")
+                    logger.error(f"Keys order length: {len(keys_order)}")
                     raise HTTPException(status_code=400, detail=f"Sample {j} has {len(features)} features, expected 35")
                 
                 rows.append(features)
@@ -181,15 +186,21 @@ async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None,
         labels, confidence_scores = predict_rows(rows)
         logger.info(f"Predictions received - Labels: {labels}, Scores: {confidence_scores}")
         
+        # Debug: Check array lengths
+        logger.info(f"Array lengths - labels: {len(labels)}, scores: {len(confidence_scores)}, names: {len(names)}")
+        
         # Format response
         result = []
         for i, (label, confidence, name) in enumerate(zip(labels, confidence_scores, names)):
+            # Convert string labels ('True', 'False') to boolean
+            bool_label = str(label).lower() == 'true' if isinstance(label, str) else bool(label)
             result.append({
                 "name": name,
                 "score": float(confidence),
-                "label": bool(label)
+                "label": bool_label,
             })
         
+        logger.info(f"Result length: {len(result)}")
         return {"data": result}
 
     except HTTPException:

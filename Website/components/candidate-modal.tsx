@@ -114,7 +114,7 @@ export function CandidateModal({
                   className="bg-primary/10 text-primary border-primary/30 px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-semibold"
                 >
                   {(
-                    (prediction?.confidence || prediction?.probability || 0) *
+                    (prediction?.score || prediction?.confidence || prediction?.probability || 0) *
                     100
                   ).toFixed(1)}
                   % AI

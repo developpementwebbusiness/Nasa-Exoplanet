@@ -16,7 +16,12 @@ interface CSVUploaderProps {
   hasData?: boolean;
 }
 
-export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVUploaderProps) {
+export function CSVUploader({
+  onUpload,
+  isProcessing,
+  onRecheck,
+  hasData,
+}: CSVUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [rowCount, setRowCount] = useState<number>(0);
@@ -70,7 +75,7 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
           }
         },
         error: (error) => {
-          console.error("[v0] CSV parsing error:", error);
+          console.error(" CSV parsing error:", error);
         },
       });
     } else if (fileExtension === "json" || file.type === "application/json") {
@@ -91,14 +96,14 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
             setShowMapper(true);
           }
         } catch (error) {
-          console.error("[v0] JSON parsing error:", error);
+          console.error(" JSON parsing error:", error);
         }
       };
       reader.readAsText(file);
     } else if (["xlsx", "xls"].includes(fileExtension || "")) {
       // Handle Excel files (would need xlsx library)
       console.warn(
-        "[v0] Excel file detected but parsing not yet implemented. Please convert to CSV or JSON."
+        " Excel file detected but parsing not yet implemented. Please convert to CSV or JSON."
       );
       // For now, show an error message
       setRowCount(0);
@@ -145,13 +150,15 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
       const mappedData = pendingData.map((row) => {
         const newRow: any = {};
 
-        // Keep original data
-        Object.assign(newRow, row);
-
-        // Add mapped columns with standardized names
+        // ONLY add mapped columns with standardized names (don't keep original columns)
         Object.entries(mapping).forEach(([standardKey, csvColumn]) => {
           newRow[standardKey] = row[csvColumn];
         });
+
+        // Keep the name field if it exists
+        if (row.name || row.kepoi_name || row.kepler_name) {
+          newRow.name = row.name || row.kepoi_name || row.kepler_name;
+        }
 
         return newRow;
       });
@@ -159,8 +166,12 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
       setShowMapper(false);
       setPendingData(null);
       setIsConfirmed(true); // Mark as confirmed so the UI shows the data
-      
-      console.log("[CSV-Uploader] 🟡 Calling onUpload with", mappedData.length, "items");
+
+      console.log(
+        "[CSV-Uploader] 🟡 Calling onUpload with",
+        mappedData.length,
+        "items"
+      );
       onUpload(mappedData);
     },
     [pendingData, onUpload]
@@ -325,7 +336,11 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
                   disabled={isProcessing}
                   className="flex-shrink-0"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`w-4 h-4 mr-2 ${
+                      isProcessing ? "animate-spin" : ""
+                    }`}
+                  />
                   Recheck
                 </Button>
               )}

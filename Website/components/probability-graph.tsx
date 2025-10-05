@@ -64,7 +64,7 @@ export function ProbabilityGraph({
     () =>
       predictions.map((pred, index) => ({
         index: index + 1,
-        confidence: (pred.confidence || pred.probability || 0) * 100,
+        confidence: (pred.score || pred.confidence || pred.probability || 0) * 100,
         originalIndex: index,
       })),
     [predictions]

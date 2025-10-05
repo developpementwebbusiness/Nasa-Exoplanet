@@ -80,6 +80,7 @@ export interface ModelInfo {
 /**
  * Convert CSV row data to ExoplanetData format
  * Handles mapping from various CSV column names to API format
+ * ONLY returns the 35 features required by the AI model (no Confirmation, TempUp, TempDown)
  */
 export function csvRowToExoplanetData(row: any, index: number): ExoplanetData {
   const getValue = (key: string): number => {
@@ -89,7 +90,8 @@ export function csvRowToExoplanetData(row: any, index: number): ExoplanetData {
     return isNaN(num) ? 0.0 : num;
   };
 
-  return {
+  // Create object with ONLY the 35 required fields
+  const result: ExoplanetData = {
     name:
       row.name || row.kepoi_name || row.kepler_name || `Candidate_${index + 1}`,
     OrbitalPeriod: getValue("koi_period") || getValue("OrbitalPeriod") || 0,
@@ -129,6 +131,9 @@ export function csvRowToExoplanetData(row: any, index: number): ExoplanetData {
     Dec: getValue("dec") || getValue("Dec") || 0,
     KeplerMag: getValue("koi_kepmag") || getValue("KeplerMag") || 0,
   };
+
+  // Return ONLY these fields, ignore any extra fields in the input
+  return result;
 }
 
 /**
@@ -228,13 +233,68 @@ async function predictSingleBatch(
 ): Promise<PredictionResult[]> {
   console.log(`[API] 📤 Making API call to /predict with ${data.length} items`);
 
+  // Filter to ONLY include the 35 valid features (no Confirmation, TempUp, TempDown, or extra fields)
+  const validKeys: (keyof ExoplanetData)[] = [
+    "OrbitalPeriod",
+    "OPup",
+    "OPdown",
+    "TransEpoch",
+    "TEup",
+    "TEdown",
+    "Impact",
+    "ImpactUp",
+    "ImpactDown",
+    "TransitDur",
+    "DurUp",
+    "DurDown",
+    "TransitDepth",
+    "DepthUp",
+    "DepthDown",
+    "PlanetRadius",
+    "RadiusUp",
+    "RadiusDown",
+    "EquilibriumTemp",
+    "InsolationFlux",
+    "InsolationUp",
+    "InsolationDown",
+    "TransitSNR",
+    "StellarEffTemp",
+    "SteffUp",
+    "SteffDown",
+    "StellarLogG",
+    "LogGUp",
+    "LogGDown",
+    "StellarRadius",
+    "SradUp",
+    "SradDown",
+    "RA",
+    "Dec",
+    "KeplerMag",
+  ];
+
+  const cleanedData = data.map((item) => {
+    const cleaned: any = {};
+    validKeys.forEach((key) => {
+      if (key in item) {
+        cleaned[key] = item[key];
+      }
+    });
+    return cleaned;
+  });
+
+  console.log(
+    `[API] Cleaned data, sending ${cleanedData.length} items with ${
+      Object.keys(cleanedData[0] || {}).length
+    } fields each`
+  );
+
   const response = await fetch(`${API_BASE_URL}/predict`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      data: data,
+      data: cleanedData,
       user_id: userId,
     }),
   });

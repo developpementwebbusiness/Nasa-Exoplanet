@@ -55,7 +55,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
         setTrainingDataset(cleanedData);
       },
       error: (error) => {
-        console.error("[v0] CSV parsing error:", error);
+        console.error(" CSV parsing error:", error);
         alert("Error parsing training dataset");
       },
     });
@@ -139,7 +139,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       setTrainingFileName("");
       setModelName("");
     } catch (error) {
-      console.error("[v0] Training error:", error);
+      console.error(" Training error:", error);
     } finally {
       setIsTraining(false);
     }
@@ -170,7 +170,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
         ]);
       }
     } catch (error) {
-      console.error("[v0] Load models error:", error);
+      console.error(" Load models error:", error);
       setModels([
         { name: "default", accuracy: 0.89, samples: 1000, isDefault: true },
       ]);
@@ -185,7 +185,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/export/${modelName}`
       );
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -234,7 +234,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       }
       loadModels();
     } catch (error) {
-      console.error("[v0] Import error:", error);
+      console.error(" Import error:", error);
     }
   };
 
@@ -471,17 +471,20 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                           </Badge>
                         )}
                         {model.version && (
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                          <Badge
+                            variant="outline"
+                            className="text-xs flex-shrink-0"
+                          >
                             v{model.version}
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        {model.model_type && (
-                          <span>{model.model_type}</span>
-                        )}
+                        {model.model_type && <span>{model.model_type}</span>}
                         {model.accuracy && (
-                          <span>• {(model.accuracy * 100).toFixed(1)}% accuracy</span>
+                          <span>
+                            • {(model.accuracy * 100).toFixed(1)}% accuracy
+                          </span>
                         )}
                       </div>
                     </div>

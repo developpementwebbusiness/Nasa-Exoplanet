@@ -89,7 +89,7 @@ export function DataTable({
       ...row,
       _index: index,
       _confidence:
-        predictions[index]?.confidence || predictions[index]?.probability || 0,
+        predictions[index]?.score || predictions[index]?.confidence || predictions[index]?.probability || 0,
       _classification: classifications[index]?.type || "unclassified",
     }));
 
