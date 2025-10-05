@@ -29,10 +29,11 @@ df = pd.read_csv('Python/server/utils/Data/ExoHarmonious')
 features = columnnames[1:]  # replace with your numeric columns that you want to keep
 label_col = columnnames[0]                  # replace with your target column that you want your model to predict
 
-
+'''
 imputer = IterativeImputer()
 df[features] = imputer.fit_transform(df[features])
-
+'''
+df = df[columnnames].dropna()
 
 # numeric features -> StandardScaler
 scaler = StandardScaler()
