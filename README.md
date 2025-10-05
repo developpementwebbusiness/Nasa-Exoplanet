@@ -51,6 +51,7 @@ app_launcher.bat
 
 ⚠️ Windows only: The app_launcher.bat file is a Windows batch script and will not work on Linux or macOS systems.
 
+The first launch might take upward of 10 minutes to set everything up.
 ---
 
 If it fails, try the following manual steps below 👇
@@ -89,6 +90,7 @@ With everything done it should look like this in the **Command Prompt** (Windows
 ```bash
 sudo docker compose up --build
 ```
+The first launch might take upward of 10 minutes to set everything up.
 
 ---
 
