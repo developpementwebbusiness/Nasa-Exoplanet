@@ -82,6 +82,7 @@ async def predire(donnees: DonneesEntree):
         logger.info(f"Requête reçue de {donnees.user_id}")
         
         # Faire tourner l'IA sur les données reçues
+        
         resultat_ia = modele_ia.predire(donnees.features)
         
         logger.info(f"Prédiction effectuée: {resultat_ia}")
