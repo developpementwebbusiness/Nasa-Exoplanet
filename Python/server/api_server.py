@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
-#from utils.STARPredict import predict_rows
+from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
 
@@ -94,7 +94,7 @@ async def predire(donnees: DonneesEntree):
                 unknown_rows.append(rows[i])
 
             # 4) IA uniquement sur les inconnus
-            new_values = #predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
+            new_values = "UwU :3" #predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
 
             # 5) Insert-only en DB (ne remplace jamais l’existant)
             insert_map = {}
