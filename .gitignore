@@ -44,3 +44,10 @@ next-env.d.ts
 .specify
 .github
 specs
+
+*/.venv/
+*/__pycache__/
+
+# Python server virtualenv
+/Python/server/.venv/
+/Python/server/__pycache__/
