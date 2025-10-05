@@ -14,8 +14,6 @@ from sklearn.experimental import enable_iterative_imputer
 import cleaning_library as cl
 
 
-
-
 StandardizedColumnNames = ['Confirmation', 
 'OrbitalPeriod', 
 'TransEpoch', 
@@ -72,18 +70,18 @@ def cleaning(data):
     df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
     return df
 
-def setup(df):
+def setup(df,AIname):
     features = StandardizedColumnNames[1:]  # replace with your numeric columns that you want to keep
     label_col = StandardizedColumnNames[0]                  # replace with your target column that you want your model to predict
 
-    scaler = StandardScaler()
-    X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne)/ecart-type to center data and get rid of unit
+    scalencode = {f'{AIname}scaler':StandardScaler(),f'{AIname}le' : LabelEncoder()}
 
-    le = LabelEncoder()
-    Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
+    X = scalencode[f'{AIname}scaler'].fit_transform(df[features].values.astype(np.float32)) #(value-moyenne)/ecart-type to center data and get rid of unit
 
-    joblib.dump(scaler, "utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
-    joblib.dump(le, "utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
+    Y = scalencode[f'{AIname}le'].fit_transform(df[label_col].values)   #transforms labels to integers
+
+    joblib.dump(scalencode[f'{AIname}scaler'], f"utils/Data/AI/{AIname}/scaler.pkl") # save the scaler for later use
+    joblib.dump(scalencode[f'{AIname}le'], f"utils/Data/AI/{AIname}/label_encoder.pkl") # save the label encoder for later use
 
     # split data into train (70%), temp (30%)
     X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random_state=42,stratify=Y) # 70% XYtrain, 30% XYtemp, 42 for reproducibility (imagine a minecraft seed)
@@ -113,7 +111,7 @@ def setup(df):
 
     loaders = {'train':(train_loader,X_train,Y_train),'validation':(val_loader,X_val,Y_val),'test':(test_loader,X_test,Y_test)}
     
-    return loaders,scaler,le,X,Y
+    return loaders,scalencode,X,Y
 
 
 def set_seed(seed=42): #setting seed for reproducibility on all libraries
@@ -123,19 +121,16 @@ set_seed(67)
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
-    def __init__(self, input_dim, hidden=[128,64], dropout=0.2):
+    def __init__(self, hidden=[128,64], dropout=0.2):
         #amount of columns in input data, list of hidden layer sizes, number of output classes, dropout rate #Adapt these hyperparameters depending on your dataset
 
         super().__init__() #call parent constructor to get nn.Module functionalities
         
         layers = [] 
-        in_dim = input_dim #amount of features in input data = number of neurons in input layer (intially)
+        in_dim = 35 #amount of features in input data = number of neurons in input layer (intially)
 
         for h in hidden:
             layers += [nn.Linear(in_dim, h), nn.ReLU(), nn.Dropout(dropout)] 
-            #Linear(X) = xW^Transpose + b, W weights, b bias, ReLU(X) = max(0,X) activation function, dropout to avoid overfitting by randomly setting some activations to 0
-            #layers is essentially a cycle of Linear -> ReLU -> Dropout, repeated for each hidden layer size in the hidden list
-
             in_dim = h
         layers.append(nn.Linear(in_dim, 2))   #final layer without activation 
         self.net = nn.Sequential(*layers) #automatically inputs data through all layer functions in sequence
@@ -149,9 +144,7 @@ def devicesel():
 def definemodel(X,hiddenlayers=[128,64]):
     DEVICE = devicesel()
     model = SimpleMLP(
-        input_dim=X.shape[1], #number of features in input data
         hidden=hiddenlayers,  #size of hidden layers, can be changed
-        num_classes=2 #number of output classes (ex: exoplanet, false positive, candidate)
         ).to(DEVICE)
     return model
 
@@ -209,6 +202,7 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimize
     DEVICE = devicesel()
     
     best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
+    AIfilepath = f"Python/server/utils/Data/AI/{AIname}/{AIname}.pth"
 
     for epoch in range(epochs):   # 30 epochs example
         # --- Train on all batches in the training set ---
@@ -221,10 +215,10 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimize
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             # Save the model's weights to disk
-            torch.save(model.state_dict(), f"Python/server/utils/Data/AI/{AIname}/{AIname}.pth")   # checkpoint
+            torch.save(model.state_dict(), AIfilepath)   # checkpoint
 
     # This ensures we use the model that performed best on validation data
-    model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2.pth", map_location=DEVICE))
+    model.load_state_dict(torch.load(AIfilepath, map_location=DEVICE))
 
     model.eval()  #same idea as the other times we called our Datakoaders
     preds, trues = [], []
@@ -243,7 +237,58 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimize
     classif = classification_report(trues, preds, labels=labels, target_names=target_names)
     return classif
 
+def AITRAIN(data,hiddenlayers=[128,64],epochs=100,AIname='NewAI'):
+    df = cleaning(data)  
+    loaders, scalencode, X, Y = setup(df,AIname)
 
+    # Define the model
+    model = definemodel(X, hiddenlayers=hiddenlayers)
+
+    # Compute loss function and optimizer
+    criterion, optimizer = weights(Y, model)
+
+    # Train the model
+    classif = training(
+        epochs=epochs,
+        model=model,
+        train_loader=loaders['train'],
+        val_loader=loaders['validation'],
+        test_loader=loaders['test'],
+        AIname=AIname,
+        device=torch.device('cpu'),
+        le=scalencode[f'{AIname}le'],
+        optimizer=optimizer,
+        criterion=criterion
+    )
+
+    model_path = f"utils/Data/AI/{AIname}/{AIname}.pth"
+    scaler_path = f"utils/Data/AI/{AIname}/scaler.pkl"
+    le_path = f"utils/Data/AI/{AIname}/label_encoder.pkl"
+
+    return classif, model_path, scaler_path, le_path
+
+def AIPredict(model_path, scaler_path, le_path, data, hiddenlayers=[128,64]):
+    scaler = joblib.load(scaler_path)
+    le = joblib.load(le_path)
+
+    model = SimpleMLP(hidden=hiddenlayers)
+    model.load_state_dict(torch.load(model_path, map_location=devicesel()))
+    model.eval()
+
+    X_nu = np.array(data, dtype=np.float32)
+    X_nu[np.isnan(X_nu)] = 0.0  # replace NaNs with 0
+    X_scaled = scaler.transform(X_nu)
+    X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
+
+    with torch.no_grad():
+
+        logits = model(X_tensor)
+        probs = torch.softmax(logits, dim=1)
+        preds = logits.argmax(dim=1).numpy()
+        labels = le.inverse_transform(preds)
+        prob_scores = probs.max(dim=1).values.numpy()
+
+    return labels, prob_scores
 
 #Function order:
 '''
