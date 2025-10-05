@@ -1,16 +1,22 @@
-
 FROM node:24.9-alpine3.21
 
-WORKDIR /Website ./
+# Set working directory
+WORKDIR /Website
 
+# Install pnpm globally
+RUN npm install -g npm
+
+# Copy only package files first (for caching)
 COPY Website/package*.json ./
-RUN npm install
-COPY Website/ ./
 
+# Install dependencies using pnpm
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the source code
+COPY Website/ .
+
+# Expose the port your app runs on
 EXPOSE 3000
 
-#Run dev mode with hot reload
-CMD ["npm", "run", "dev"]
-
-
-
+# Run in dev mode with hot reload
+CMD ["pnpm", "run", "dev"]
