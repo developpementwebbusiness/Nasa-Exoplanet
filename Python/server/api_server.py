@@ -8,7 +8,6 @@ import io
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from model import MonModeleIA
 from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
@@ -26,7 +25,7 @@ app = FastAPI(
 )
 
 # Charger le modèle IA au démarrage
-modele_ia = MonModeleIA()
+modele_ia = MonModeleIA() # TODO
 
 # Charger la database
 db = KVStore("store.db")
