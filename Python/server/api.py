@@ -9,9 +9,10 @@ from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 from utils.STARPredict import predict_rows
+from utils.AITrainer import training
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import Response
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)

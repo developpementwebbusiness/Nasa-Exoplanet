@@ -84,7 +84,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 from AITrainer import cleaning, setup, definemodel, weights, training
 
 # Load and clean data
-df = cleaning(data_list)  # data_list = list of rows
+df = cleaning(data)  
 loaders, scaler, le, X, Y = setup(df)
 
 # Define the model
