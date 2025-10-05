@@ -9,14 +9,9 @@ import torch.nn.functional as F
 
 #Loading scalers used for AI training
 
-<<<<<<< HEAD
 scaler = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
 le = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
 
-=======
-scaler = joblib.load("utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
-le = joblib.load("utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
->>>>>>> 38e7f7ece48b166b98d34252954345d5b04efdee
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
@@ -41,16 +36,12 @@ class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
         return self.net(x)
 
 model = SimpleMLP(
-    input_dim=10, #number of features in input data
+    input_dim=35, #number of features in input data
     hidden=[128,64],  #size of hidden layers, can be changed
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-<<<<<<< HEAD
 model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
-=======
-model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
->>>>>>> 38e7f7ece48b166b98d34252954345d5b04efdee
 model.eval()  # important for evaluation
 
 def predict_rows(rows):
@@ -73,14 +64,10 @@ def predict_rows(rows):
 
     return labels,prob_scores
 
+row = [[0.724, 0.182, 0.947, 0.536, 0.413, 0.851, 0.274, 0.692, 0.015, 0.477,
+        0.589, 0.366, 0.128, 0.962, 0.701, 0.839, 0.251, 0.034, 0.908, 0.641,
+        0.172, 0.799, 0.425, 0.556, 0.310, 0.094, 0.771, 0.230, 0.667, 0.385,
+        0.093, 0.822, 0.507, 0.179, 0.946]]
 
-<<<<<<< HEAD
-a,b = predict_rows(rows)
+a,b = predict_rows(row)
 print(a,b)
-=======
-if __name__ == "__main__":
-    rows = [[234,432,-394,143,231,47,643,712],
-            [769,432,-34,535,231,-43,643,798]]
-
-    predict_rows(rows)
->>>>>>> 38e7f7ece48b166b98d34252954345d5b04efdee
