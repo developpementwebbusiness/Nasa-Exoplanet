@@ -141,7 +141,7 @@ def devicesel():
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return DEVICE
 
-def definemodel(X,hiddenlayers=[128,64]):
+def definemodel(hiddenlayers=[128,64]):
     DEVICE = devicesel()
     model = SimpleMLP(
         hidden=hiddenlayers,  #size of hidden layers, can be changed
