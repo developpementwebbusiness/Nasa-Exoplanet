@@ -61,7 +61,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "model_loaded": modele_ia is not None}
+    return {"status": "healthy", "model_loaded": "None" if modele_ia is None else modele_ia}
 
 # Endpoint principal: reçoit JSON, fait tourner l'IA, renvoie JSON
 @app.post("/predict", response_model=ReponseIA)
