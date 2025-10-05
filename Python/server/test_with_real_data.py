@@ -32,7 +32,8 @@ def load_real_data():
     # The AI shouldn't see the answer!
     feature_columns = df.columns[1:]  # Skip first column (koi_disposition)
     
-    print(f"🔢 Using {len(feature_columns)} features for prediction")
+    print(f"🔢 Using {len(feature_columns)} features for prediction (37 features, API will filter to 35)")
+    print(f"ℹ️  Note: TempUp and TempDown columns will be removed by the API")
     
     return df, feature_columns
 
