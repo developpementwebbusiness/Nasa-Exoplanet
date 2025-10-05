@@ -1,16 +1,18 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Query
-from typing import List, Optional
-from fastapi.responses import FileResponse
 import shutil
 import pathlib
-from pydantic import BaseModel, Field
-from typing import List
 import logging
+import zipfile
+import uvicorn
+import io
+
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from model import MonModeleIA
 from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
-
+from fastapi.responses import Response
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -125,11 +127,10 @@ async def predire(donnees: DonneesEntree):
             detail=f"Erreur lors du traitement: {str(e)}"
         )
 
-
-
 # ----------------------
 # File upload / download
 # ----------------------
+# Endpoint pour importer 3 fichiers simultanément
 
 # Endpoint pour importer 3 fichiers dans un dossier IA spécifique
 @app.post("/import_ia_files")
@@ -202,10 +203,7 @@ async def export_ia_files(
         GET /export_ia_files/STAR_AI_v2  (exporte TOUS les fichiers)
         GET /export_ia_files/STAR_AI_v2?file_names=file1.pkl&file_names=file2.pkl  (fichiers spécifiques)
     """
-    import zipfile
-    import io
-    from fastapi.responses import Response
-    
+
     # Chemin source: utils/Data/{ia_folder}/
     source_path = "utils" / "Data" / ia_folder
     
@@ -278,5 +276,4 @@ async def export_ia_files(
 
 # Lancer le serveur
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

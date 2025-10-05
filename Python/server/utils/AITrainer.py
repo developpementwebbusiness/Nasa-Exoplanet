@@ -11,9 +11,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
 import cleaning_library as cl
-from rich import print
+
 
 
 
@@ -244,11 +243,12 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,device,le,o
     from sklearn.metrics import classification_report
     labels = np.unique(trues)
     target_names = [str(x) for x in le.inverse_transform(labels)]
-    print(classification_report(trues, preds, labels=labels, target_names=target_names))
+    classif = classification_report(trues, preds, labels=labels, target_names=target_names)
+    return classif
 
 #Function order:
 '''
-cleaning(data) en liste
+df = cleaning(data) en liste
 setup(df) en pandas
 
 loads,scale,label,x,y = setup(df)
@@ -258,4 +258,6 @@ model = definemodel(x,hiddenlayers,device=DEVICE)
 cri, opti = weights(y,model)
 
 training(epochs,model,loads['train'],loads['validation'],loads['test'],AIname,device,label,opti,cri)
+
+ce que l'utilisateur doit fournir: data, hiddenlayers,epochs,AIname
 '''
