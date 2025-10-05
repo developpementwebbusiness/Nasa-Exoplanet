@@ -130,61 +130,6 @@ async def predire(donnees: DonneesEntree):
 # ----------------------
 # File upload / download
 # ----------------------
-# Endpoint pour importer 3 fichiers simultanément
-# Endpoint pour importer 3 fichiers dans un dossier IA spécifique
-@app.post("/import_ia_files")
-async def import_ia_files(
-    files: List[UploadFile] = File(...),
-    ia_folder: str = "IA_1",  # IA_1, IA_2, etc.
-    user_id: str = "anon"
-):
-    """
-    Importe exactement 3 fichiers dans un dossier IA spécifique.
-    Exemple: Data/IA_1/
-    """
-    if len(files) != 3:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Exactement 3 fichiers requis, {len(files)} reçus"
-        )
-    
-    # Définir le chemin destination: utils/Data/IA_X/
-    dest_path = BASE_DIR / "utils" / "Data" / ia_folder
-    dest_path.mkdir(parents=True, exist_ok=True)
-    
-    result = {"imported": [], "failures": [], "destination": str(dest_path)}
-    
-    for file in files:
-        dest_file = dest_path / file.filename
-        
-        try:
-            with dest_file.open("wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            
-            result["imported"].append({
-                "filename": file.filename,
-                "size": dest_file.stat().st_size,
-                "path": str(dest_file)
-            })
-            logger.info(f"✓ Importé dans {ia_folder}: {file.filename} par {user_id}")
-            
-        except Exception as e:
-            result["failures"].append({
-                "filename": file.filename,
-                "error": str(e)
-            })
-            logger.error(f"✗ Échec import {file.filename}: {str(e)}")
-        finally:
-            await file.close()
-    
-    return {
-        "status": "completed",
-        "ia_folder": ia_folder,
-        "user_id": user_id,
-        "imported_count": len(result["imported"]),
-        "details": result
-    }
-
 
 # Endpoint pour importer 3 fichiers dans un dossier IA spécifique
 @app.post("/import_ia_files")
@@ -262,7 +207,7 @@ async def export_ia_files(
     from fastapi.responses import Response
     
     # Chemin source: utils/Data/{ia_folder}/
-    source_path = BASE_DIR / "utils" / "Data" / ia_folder
+    source_path = "utils" / "Data" / ia_folder
     
     if not source_path.exists():
         raise HTTPException(
