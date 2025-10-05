@@ -9,9 +9,10 @@ from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from utils.STARPredict import predict_rows
+from utils.AITrainer import training
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import Response
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -50,14 +51,19 @@ async def predire(donnees: DonneesEntree):
         logger.info(f"Requête de {donnees.user_id}: {len(donnees.features)} features")
 
         rows = [donnees.features]
-        labels, confidence_scores = predict_rows(rows)
+        predictions = predict_rows(rows)
         
         result = []
-        for i, (label, confidence) in enumerate(zip(labels, confidence_scores)):
+        for i, prediction in enumerate(predictions):
+            if isinstance(prediction, (list, tuple)):
+                score = float(prediction[0]) if len(prediction) > 0 else 0.5
+            else:
+                score = float(prediction) if isinstance(prediction, (int, float)) else 0.5
+            
             result.append({
                 "name": f"Exoplanet_{i+1}",
-                "score": float(confidence),
-                "label": bool(label)
+                "score": round(score, 4),
+                "label": "CONFIRMED" if score > 0.5 else "FALSE POSITIVE"
             })
         
         return {"data": result}
@@ -102,15 +108,20 @@ async def predire_batch(donnees: ExoplanetsData):
         # Vérification avant predict_rows
         logger.info(f"Envoi à predict_rows: {len(rows)} lignes de {len(rows[0])} features chacune")
         
-        labels, confidence_scores = predict_rows(rows)
-        logger.info(f"Prédictions reçues - Labels: {labels}, Scores: {confidence_scores}")
+        predictions = predict_rows(rows)
+        logger.info(f"Prédictions reçues: {predictions}")
         
         result = []
-        for i, (label, confidence) in enumerate(zip(labels, confidence_scores)):
+        for i, prediction in enumerate(predictions):
+            if isinstance(prediction, (list, tuple)):
+                score = float(prediction[0]) if len(prediction) > 0 else 0.5
+            else:
+                score = float(prediction) if isinstance(prediction, (int, float)) else 0.5
+            
             result.append({
-                "name": donnees.data[i].get("name", f"Exoplanet_{i+1}"),
-                "score": float(confidence),
-                "label": bool(label)
+                "name": f"Exoplanet_{i+1}",
+                "score": round(score, 4),
+                "label": True if score > 0.5 else False
             })
         
         return {"data": result}
@@ -125,87 +136,18 @@ async def test_prediction():
         # ✅ 35 valeurs de test
         test_row = [0.1 + (i * 0.02) for i in range(35)]
         
-        labels, confidence_scores = predict_rows([test_row])
+        predictions = predict_rows([test_row])
         
         result = [{
             "name": "Test_Exoplanet",
-            "score": float(confidence_scores[0]),
-            "label": bool(labels[0])
+            "score": round(float(predictions[0]), 4) if predictions else 0.5,
+            "label": "CONFIRMED" if (predictions and float(predictions[0]) > 0.5) else "FALSE POSITIVE"
         }]
         
         return {"data": result}
         
     except Exception as e:
         return {"error": str(e)}
-
-@app.get("/export_model")
-async def export_model():
-    """
-    Export the complete AI model package as a ZIP file.
-    Includes all necessary files: model, scaler, label_encoder, and any custom uploaded models
-    """
-    try:
-        model_dir = BASE_DIR / "utils" / "Data" / "AI" / "STAR_AI_v2"
-        
-        if not model_dir.exists():
-            raise HTTPException(status_code=404, detail="Model directory not found")
-        
-        # Create a ZIP file in memory
-        zip_buffer = io.BytesIO()
-        
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # Add model file (required)
-            model_path = model_dir / "STAR_AI_v2.pth"
-            if model_path.exists():
-                zip_file.write(model_path, "STAR_AI_v2/STAR_AI_v2.pth")
-            else:
-                raise HTTPException(status_code=404, detail="Model file not found")
-            
-            # Add scaler file (required for predictions)
-            scaler_path = model_dir / "scaler.pkl"
-            if scaler_path.exists():
-                zip_file.write(scaler_path, "STAR_AI_v2/scaler.pkl")
-            else:
-                raise HTTPException(status_code=404, detail="Scaler file not found")
-            
-            # Add label encoder file (required for predictions)
-            le_path = model_dir / "label_encoder.pkl"
-            if le_path.exists():
-                zip_file.write(le_path, "STAR_AI_v2/label_encoder.pkl")
-            else:
-                raise HTTPException(status_code=404, detail="Label encoder file not found")
-            
-            # Add custom uploaded models from uploads directory
-            if UPLOAD_DIR.exists():
-                custom_model_count = 0
-                for file_path in UPLOAD_DIR.iterdir():
-                    if file_path.is_file():
-                        # Include .pth, .pkl, .pt, .h5 model files
-                        if file_path.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
-                            zip_file.write(file_path, f"custom_models/{file_path.name}")
-                            custom_model_count += 1
-                            logger.info(f"Added custom model: {file_path.name}")
-                
-                if custom_model_count > 0:
-                    logger.info(f"Included {custom_model_count} custom model(s)")
-        
-        zip_buffer.seek(0)
-        
-        logger.info("Exporting complete model package (base model + custom uploads)")
-        
-        return Response(
-            content=zip_buffer.getvalue(),
-            media_type="application/zip",
-            headers={
-                "Content-Disposition": "attachment; filename=STAR_AI_v2_complete.zip"
-            }
-        )
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error exporting model: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error exporting model: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
