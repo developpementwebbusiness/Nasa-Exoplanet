@@ -9,8 +9,8 @@ import torch.nn.functional as F
 
 #Loading scalers used for AI training
 
-scaler = joblib.load("Data/scaler.pkl") #to scale data the same way
-le = joblib.load("Data/label_encoder.pkl") #to convert predictions back to True and False
+scaler = joblib.load("serveur/utils/Data/scaler.pkl") #to scale data the same way
+le = joblib.load("serveur/utils/Data/label_encoder.pkl") #to convert predictions back to True and False
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
