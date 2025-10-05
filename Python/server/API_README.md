@@ -13,11 +13,13 @@ A Flask API wrapper for the STAR AI exoplanet classification model.
 ## Installation
 
 1. Install dependencies:
+
 ```bash
 pip install -r ../requirements.txt
 ```
 
 Or install Flask specifically:
+
 ```bash
 pip install flask flask-cors
 ```
@@ -41,6 +43,7 @@ The API will start on `http://localhost:5000`
 Check if the API is running.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -57,6 +60,7 @@ Check if the API is running.
 Get details about the AI model.
 
 **Response:**
+
 ```json
 {
   "model_name": "STAR_AI_v2",
@@ -77,6 +81,7 @@ Classify exoplanet candidates based on input features.
 **Request Body:**
 
 Single prediction:
+
 ```json
 {
   "features": [1.0, 2.0, 3.0, ..., 35.0]
@@ -84,6 +89,7 @@ Single prediction:
 ```
 
 Batch predictions:
+
 ```json
 {
   "features": [
@@ -95,6 +101,7 @@ Batch predictions:
 ```
 
 **Response:**
+
 ```json
 {
   "predictions": [
@@ -112,6 +119,7 @@ Batch predictions:
 ```
 
 **Error Response:**
+
 ```json
 {
   "error": "Row 0 has 3 features, expected 35"
@@ -196,12 +204,14 @@ The model expects **35 features** per sample. Make sure your input data has been
 ## Error Handling
 
 The API validates:
+
 - JSON format
 - Required "features" key
 - Correct number of features (35)
 - Data types (numeric values)
 
 All errors return appropriate HTTP status codes:
+
 - `400`: Bad Request (invalid input)
 - `500`: Internal Server Error
 
@@ -210,6 +220,7 @@ All errors return appropriate HTTP status codes:
 For production use, consider:
 
 1. Using a production WSGI server (e.g., Gunicorn):
+
 ```bash
 pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 api:app
