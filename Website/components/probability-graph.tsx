@@ -149,19 +149,23 @@ export function ProbabilityGraph({
         return [
           d.index,
           d.confidence.toFixed(2),
-          classification ? classification.type.replace(/_/g, ' ') : 'Not classified',
-          classification?.comment || ''
+          classification
+            ? classification.type.replace(/_/g, " ")
+            : "Not classified",
+          classification?.comment || "",
         ];
       }),
     ]
-      .map((row) => row.map(cell => `"${cell}"`).join(","))
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `exoplanet-confidence-${filter}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `exoplanet-confidence-${filter}-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [chartData, filter, classifications]);
@@ -518,7 +522,7 @@ export function ProbabilityGraph({
                   onCandidateClick(e.payload.originalIndex);
                 }
               },
-              cursor: 'pointer',
+              cursor: "pointer",
             }}
             isAnimationActive={false}
             onClick={(data: any) => {

@@ -113,8 +113,8 @@ X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne
 le = LabelEncoder()
 Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
-joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
-joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
+joblib.dump(scaler, "utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
+joblib.dump(le, "utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data split
@@ -257,14 +257,14 @@ for epoch in range(1, 201):   # 30 epochs example
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         # Save the model's weights to disk
-        torch.save(model.state_dict(), "Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth")   # checkpoint
+        torch.save(model.state_dict(), "utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth")   # checkpoint
     
     # --- Print progress for this epoch ---
     print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
 
 
 # This ensures we use the model that performed best on validation data
-model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=DEVICE))
+model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=DEVICE))
 
 model.eval()  #same idea as the other times we called our Datakoaders
 preds, trues = [], []

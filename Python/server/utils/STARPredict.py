@@ -9,8 +9,8 @@ import torch.nn.functional as F
 
 #Loading scalers used for AI training
 
-scaler = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
-le = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
+scaler = joblib.load("utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
+le = joblib.load("utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
 
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
@@ -41,7 +41,7 @@ model = SimpleMLP(
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
+model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
 model.eval()  # important for evaluation
 
 def predict_rows(rows):

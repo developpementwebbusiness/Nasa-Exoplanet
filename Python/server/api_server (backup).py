@@ -1,3 +1,6 @@
+# The content of the files below **DO NOT WORK** the code is broken and used only for informative purposes.
+
+
 import shutil
 import pathlib
 import logging
@@ -8,7 +11,6 @@ import io
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from model import MonModeleIA
 from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
@@ -26,7 +28,7 @@ app = FastAPI(
 )
 
 # Charger le modèle IA au démarrage
-modele_ia = MonModeleIA()
+modele_ia = MonModeleIA() # TODO
 
 # Charger la database
 db = KVStore("store.db")
@@ -97,7 +99,7 @@ async def predire(donnees: DonneesEntree):
                 unknown_rows.append(rows[i])
 
             # 4) IA uniquement sur les inconnus
-            new_values = "UwU :3" #predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
+            new_values = None #predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
 
             # 5) Insert-only en DB (ne remplace jamais l’existant)
             insert_map = {}
@@ -205,7 +207,7 @@ async def export_ia_files(
     """
 
     # Chemin source: utils/Data/{ia_folder}/
-    source_path = BASE_DIR / "utils" / "Data" / ia_folder
+    source_path = f"utils/Data/{ia_folder}"
     
     if not source_path.exists():
         raise HTTPException(
