@@ -24,9 +24,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Charger la database
-db = KVStore("store.db")
-
 # Ensure uploads directory exists
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -119,85 +116,108 @@ async def predire_batch(donnees: ExoplanetsData):
         logger.error(f"Erreur batch: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur batch: {str(e)}")
 
-@app.get("/test_prediction")
-async def test_prediction():
-    try:
-        # ✅ 35 valeurs de test
-        test_row = [0.1 + (i * 0.02) for i in range(35)]
-        
-        labels, confidence_scores = predict_rows([test_row])
-        
-        result = [{
-            "name": "Test_Exoplanet",
-            "score": float(confidence_scores[0]),
-            "label": bool(labels[0])
-        }]
-        
-        return {"data": result}
-        
-    except Exception as e:
-        return {"error": str(e)}
-
 @app.get("/export_model")
-async def export_model():
+async def export_model(model_id: Optional[str] = Query(None, description="Model ID to export. Use 'all' for complete package, 'STAR_AI_v2' for base model only, or specify a custom model filename")):
     """
-    Export the complete AI model package as a ZIP file.
-    Includes all necessary files: model, scaler, label_encoder, and any custom uploaded models
+    Export AI model(s) as a ZIP file.
+    
+    Parameters:
+    - model_id: Optional. Defaults to 'all' if not specified
+        - 'all': Export everything (base model + custom models)
+        - 'STAR_AI_v2': Export only the base STAR AI model
+        - Custom filename: Export specific custom model (e.g., 'my_custom_model.pth')
+    
+    Returns: ZIP file with requested model(s) and dependencies
     """
     try:
-        model_dir = BASE_DIR / "utils" / "Data" / "AI" / "STAR_AI_v2"
+        # Default to 'all' if no model_id specified
+        if model_id is None:
+            model_id = 'all'
         
-        if not model_dir.exists():
-            raise HTTPException(status_code=404, detail="Model directory not found")
+        model_dir = BASE_DIR / "utils" / "Data" / "AI" / "STAR_AI_v2"
         
         # Create a ZIP file in memory
         zip_buffer = io.BytesIO()
         
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # Add model file (required)
-            model_path = model_dir / "STAR_AI_v2.pth"
-            if model_path.exists():
-                zip_file.write(model_path, "STAR_AI_v2/STAR_AI_v2.pth")
-            else:
-                raise HTTPException(status_code=404, detail="Model file not found")
             
-            # Add scaler file (required for predictions)
-            scaler_path = model_dir / "scaler.pkl"
-            if scaler_path.exists():
-                zip_file.write(scaler_path, "STAR_AI_v2/scaler.pkl")
-            else:
-                raise HTTPException(status_code=404, detail="Scaler file not found")
-            
-            # Add label encoder file (required for predictions)
-            le_path = model_dir / "label_encoder.pkl"
-            if le_path.exists():
-                zip_file.write(le_path, "STAR_AI_v2/label_encoder.pkl")
-            else:
-                raise HTTPException(status_code=404, detail="Label encoder file not found")
-            
-            # Add custom uploaded models from uploads directory
-            if UPLOAD_DIR.exists():
-                custom_model_count = 0
-                for file_path in UPLOAD_DIR.iterdir():
-                    if file_path.is_file():
-                        # Include .pth, .pkl, .pt, .h5 model files
-                        if file_path.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
-                            zip_file.write(file_path, f"custom_models/{file_path.name}")
-                            custom_model_count += 1
-                            logger.info(f"Added custom model: {file_path.name}")
+            # Export base STAR_AI_v2 model
+            if model_id in ['all', 'STAR_AI_v2']:
+                if not model_dir.exists():
+                    raise HTTPException(status_code=404, detail="Base model directory not found")
                 
-                if custom_model_count > 0:
-                    logger.info(f"Included {custom_model_count} custom model(s)")
+                # Add model file (required)
+                model_path = model_dir / "STAR_AI_v2.pth"
+                if model_path.exists():
+                    zip_file.write(model_path, "STAR_AI_v2/STAR_AI_v2.pth")
+                else:
+                    raise HTTPException(status_code=404, detail="Model file not found")
+                
+                # Add scaler file (required for predictions)
+                scaler_path = model_dir / "scaler.pkl"
+                if scaler_path.exists():
+                    zip_file.write(scaler_path, "STAR_AI_v2/scaler.pkl")
+                else:
+                    raise HTTPException(status_code=404, detail="Scaler file not found")
+                
+                # Add label encoder file (required for predictions)
+                le_path = model_dir / "label_encoder.pkl"
+                if le_path.exists():
+                    zip_file.write(le_path, "STAR_AI_v2/label_encoder.pkl")
+                else:
+                    raise HTTPException(status_code=404, detail="Label encoder file not found")
+                
+                logger.info("Added base STAR_AI_v2 model to export")
+            
+            # Export custom models
+            if model_id == 'all':
+                # Export all custom models
+                if UPLOAD_DIR.exists():
+                    custom_model_count = 0
+                    for file_path in UPLOAD_DIR.iterdir():
+                        if file_path.is_file():
+                            # Include .pth, .pkl, .pt, .h5 model files
+                            if file_path.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
+                                zip_file.write(file_path, f"custom_models/{file_path.name}")
+                                custom_model_count += 1
+                                logger.info(f"Added custom model: {file_path.name}")
+                    
+                    if custom_model_count > 0:
+                        logger.info(f"Included {custom_model_count} custom model(s)")
+            
+            elif model_id not in ['STAR_AI_v2']:
+                # Export specific custom model
+                custom_model_path = UPLOAD_DIR / model_id
+                if not custom_model_path.exists():
+                    raise HTTPException(status_code=404, detail=f"Custom model '{model_id}' not found")
+                
+                if not custom_model_path.is_file():
+                    raise HTTPException(status_code=400, detail=f"'{model_id}' is not a file")
+                
+                # Check if it's a valid model file
+                if custom_model_path.suffix.lower() not in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
+                    raise HTTPException(status_code=400, detail=f"'{model_id}' is not a valid model file")
+                
+                zip_file.write(custom_model_path, f"custom_models/{custom_model_path.name}")
+                logger.info(f"Exporting specific custom model: {model_id}")
         
         zip_buffer.seek(0)
         
-        logger.info("Exporting complete model package (base model + custom uploads)")
+        # Generate filename based on model_id
+        if model_id == 'all':
+            filename = "STAR_AI_v2_complete.zip"
+        elif model_id == 'STAR_AI_v2':
+            filename = "STAR_AI_v2.zip"
+        else:
+            filename = f"{pathlib.Path(model_id).stem}.zip"
+        
+        logger.info(f"Exporting model package: {model_id}")
         
         return Response(
             content=zip_buffer.getvalue(),
             media_type="application/zip",
             headers={
-                "Content-Disposition": "attachment; filename=STAR_AI_v2_complete.zip"
+                "Content-Disposition": f"attachment; filename={filename}"
             }
         )
     
