@@ -42,14 +42,14 @@ git clone https://github.com/developpementwebbusiness/Nasa-Exoplanet.git
 ```
 ⚠️ Note: You must have Git installed on your system to use this command.
 If you don’t have it yet, download and install it from the official website:
-
+👉 https://git-scm.com/downloads
 ## ▶️ Launching the App
 
 You can launch the app directly by navigating into the Nasa-Exoplanet folder and double-clicking the file:
 
 app_launcher.bat
 
-⚠️ Windows only: The APP_launcher.bat file is a Windows batch script and will not work on Linux or macOS systems.
+⚠️ Windows only: The app_launcher.bat file is a Windows batch script and will not work on Linux or macOS systems.
 
 ---
 
