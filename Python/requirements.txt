@@ -1,2 +1,8 @@
-Flask==2.3.3
-mysql-connector-python==8.0.33
+fastapi==0.118.0
+joblib==1.5.2
+numpy==2.3.3
+pydantic==2.11.10
+python_bcrypt==0.3.2
+scikit_learn==1.7.2
+torch==2.8.0
+uvicorn==0.37.0
