@@ -62,3 +62,5 @@ def predict_rows(rows):
         prob_scores = probs.max(dim=1).values.numpy()
 
     return labels,prob_scores
+
+rows = [[234,432,-394,143,231,47,643,712,23,926]]
