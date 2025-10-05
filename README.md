@@ -13,6 +13,8 @@ or download the git library and unzip it in the designated place you want or in 
   C:\
 
 then open your command prompt (search cmd in the search bar for windows).
+<img width="1511" height="1563" alt="image" src="https://github.com/user-attachments/assets/8c69484e-dea5-42ff-9c4f-d75869078dea" />
+
 go to the designated directory of your lib ex :
   cd C:\Nasa-Exoplanet
 
