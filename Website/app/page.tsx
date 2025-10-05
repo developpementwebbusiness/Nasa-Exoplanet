@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Upload,
@@ -21,6 +21,7 @@ import { ModelManager } from "@/components/model-manager";
 import { StatsOverview } from "@/components/stats-overview";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DataTable } from "@/components/data-table";
+import { CandidateModal } from "@/components/candidate-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ClassificationWithComment {
@@ -34,6 +35,7 @@ export default function ExoplanetExplorer() {
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
     null
   );
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [classifications, setClassifications] = useState<
     Record<number, ClassificationWithComment>
   >({});
@@ -41,6 +43,15 @@ export default function ExoplanetExplorer() {
   const [activeView, setActiveView] = useState<"overview" | "detailed">(
     "overview"
   );
+
+  const handleCandidateSelect = (index: number) => {
+    setSelectedCandidate(index);
+  };
+
+  const handleCandidateSelectForModal = (index: number) => {
+    setSelectedCandidate(index);
+    setIsModalOpen(true);
+  };
 
   const handleCSVUpload = async (data: any[]) => {
     setCsvData(data);
@@ -61,7 +72,6 @@ export default function ExoplanetExplorer() {
         setPredictions(result.predictions || []);
       } else {
         const mockPredictions = data.map(() => ({
-          probability: Math.random(),
           confidence: Math.random() * 0.3 + 0.7,
         }));
         setPredictions(mockPredictions);
@@ -69,7 +79,6 @@ export default function ExoplanetExplorer() {
     } catch (error) {
       console.error("[v0] Prediction error:", error);
       const mockPredictions = data.map(() => ({
-        probability: Math.random(),
         confidence: Math.random() * 0.3 + 0.7,
       }));
       setPredictions(mockPredictions);
@@ -99,10 +108,13 @@ export default function ExoplanetExplorer() {
     ).length,
     unsure: Object.values(classifications).filter((c) => c.type === "unsure")
       .length,
-    avgProbability:
+    avgConfidence:
       predictions.length > 0
         ? (
-            (predictions.reduce((sum, p) => sum + (p.probability || 0), 0) /
+            (predictions.reduce(
+              (sum, p) => sum + (p.confidence || p.probability || 0),
+              0
+            ) /
               predictions.length) *
             100
           ).toFixed(1)
@@ -110,24 +122,32 @@ export default function ExoplanetExplorer() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card backdrop-blur-sm sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-background dark:via-background dark:to-background/95">
+      <header className="border-b border-border/50 bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1"
+              className="flex items-center gap-3 sm:gap-4"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <Rocket className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                <Rocket className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
-                  NASA Exoplanet Explorer
+              <div>
+                <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
+                  S.T.A.R. Trackers
                 </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                  AI-Powered Detection • Space Apps 2025
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  AI-Powered Detection •{" "}
+                  <a
+                    href="https://www.spaceappschallenge.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors underline"
+                  >
+                    Space Apps 2025
+                  </a>
                 </p>
               </div>
             </motion.div>
@@ -136,28 +156,23 @@ export default function ExoplanetExplorer() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <main className="container mx-auto px-6 py-8 sm:py-12 space-y-8 sm:space-y-12 max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-primary/5 rounded-lg p-4 sm:p-6 border-2 border-primary/30"
+          className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20"
         >
           <div className="flex flex-col sm:flex-row items-start gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
-                Mission Control
-              </h2>
-              <p className="text-sm sm:text-base text-foreground/80 leading-relaxed">
-                Welcome to the NASA Space Apps Challenge 2025 Exoplanet
-                Detection System. Upload your Kepler telescope data, analyze AI
-                predictions, and manually classify candidates to help discover
-                new worlds beyond our solar system.
-              </p>
-            </div>
+            <p className="text-sm sm:text-base text-foreground/80">
+              Welcome to the NASA Space Apps Challenge 2025 Exoplanet Detection
+              System. Upload your Kepler telescope data, analyze AI predictions,
+              and manually classify candidates to help discover new worlds
+              beyond our solar system.
+            </p>
           </div>
         </motion.div>
 
@@ -167,6 +182,7 @@ export default function ExoplanetExplorer() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            className="bg-gradient-to-r from-card/50 to-card/30 rounded-xl p-6 border border-border/50 shadow-sm backdrop-blur-sm"
           >
             <StatsOverview stats={stats} />
           </motion.div>
@@ -178,109 +194,133 @@ export default function ExoplanetExplorer() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="flex items-center gap-2 sm:gap-3 mb-4">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border border-primary/20">
+              <Upload className="w-6 h-6 text-primary" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              Data Upload
-            </h2>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Data Upload
+              </h2>
+              <p className="text-muted-foreground">
+                Upload your Kepler telescope CSV data for analysis
+              </p>
+            </div>
           </div>
           <CSVUploader onUpload={handleCSVUpload} isProcessing={isProcessing} />
         </motion.section>
 
-        <AnimatePresence>
-          {csvData.length > 0 && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: 0.4 }}
-              className="space-y-6"
+        {csvData.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="space-y-6"
+          >
+            <Tabs
+              value={activeView}
+              onValueChange={(v) => {
+                setActiveView(v as any);
+                // Reset to candidate 1 when switching to overview (manual classification)
+                if (v === "overview" && csvData.length > 0) {
+                  setSelectedCandidate(0);
+                }
+              }}
+              className="w-full"
             >
-              <Tabs
-                value={activeView}
-                onValueChange={(v) => setActiveView(v as any)}
-                className="w-full"
-              >
-                <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted">
-                  <TabsTrigger
-                    value="overview"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="detailed"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    <Table className="w-4 h-4 mr-2" />
-                    Detailed Data
-                  </TabsTrigger>
-                </TabsList>
+              <TabsList className="grid w-full max-w-lg grid-cols-2 bg-muted/50 backdrop-blur-sm border border-border/50 shadow-sm">
+                <TabsTrigger
+                  value="overview"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="detailed"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+                >
+                  <Table className="w-4 h-4 mr-2" />
+                  Detailed Data
+                </TabsTrigger>
+              </TabsList>
 
-                <TabsContent value="overview" className="space-y-6 mt-6">
-                  {/* Probability Visualization */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-lg bg-chart-2/20 flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-chart-2" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-foreground">
-                        Probability Analysis
-                      </h2>
+              <TabsContent value="overview" className="space-y-8 mt-8">
+                {/* Probability Visualization */}
+                <div className="bg-card/50 rounded-xl p-6 border border-border/50 shadow-sm">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-chart-2/20 to-chart-2/10 flex items-center justify-center border border-chart-2/20">
+                      <TrendingUp className="w-6 h-6 text-chart-2" />
                     </div>
-                    <ProbabilityGraph
-                      predictions={predictions}
-                      onSelectCandidate={setSelectedCandidate}
-                      selectedCandidate={selectedCandidate}
-                    />
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground">
+                        Confidence Analysis
+                      </h2>
+                      <p className="text-muted-foreground">
+                        AI predictions and confidence scores
+                      </p>
+                    </div>
                   </div>
+                  <ProbabilityGraph
+                    predictions={predictions}
+                    onSelectCandidate={handleCandidateSelect}
+                    selectedCandidate={selectedCandidate}
+                  />
+                </div>
 
-                  {/* Classification Panel */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center">
-                        <Brain className="w-5 h-5 text-accent" />
-                      </div>
+                {/* Classification Panel */}
+                <div className="bg-card/50 rounded-xl p-6 border border-border/50 shadow-sm">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center border border-accent/20">
+                      <Brain className="w-6 h-6 text-accent" />
+                    </div>
+                    <div>
                       <h2 className="text-2xl font-bold text-foreground">
                         Manual Classification
                       </h2>
+                      <p className="text-muted-foreground">
+                        Review and classify exoplanet candidates
+                      </p>
                     </div>
-                    <ClassificationPanel
-                      csvData={csvData}
-                      predictions={predictions}
-                      classifications={classifications}
-                      onClassify={handleClassification}
-                      selectedCandidate={selectedCandidate}
-                      onSelectCandidate={setSelectedCandidate}
-                    />
                   </div>
-                </TabsContent>
+                  <ClassificationPanel
+                    csvData={csvData}
+                    predictions={predictions}
+                    classifications={classifications}
+                    onClassify={handleClassification}
+                    selectedCandidate={selectedCandidate}
+                    onSelectCandidate={handleCandidateSelect}
+                  />
+                </div>
+              </TabsContent>
 
-                <TabsContent value="detailed" className="mt-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-lg bg-chart-4/20 flex items-center justify-center">
-                        <Filter className="w-5 h-5 text-chart-4" />
-                      </div>
+              <TabsContent value="detailed" className="mt-8">
+                <div className="bg-card/50 rounded-xl p-6 border border-border/50 shadow-sm">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-chart-4/20 to-chart-4/10 flex items-center justify-center border border-chart-4/20">
+                      <Filter className="w-6 h-6 text-chart-4" />
+                    </div>
+                    <div>
                       <h2 className="text-2xl font-bold text-foreground">
                         Candidate Data Table
                       </h2>
+                      <p className="text-muted-foreground">
+                        Detailed view of all exoplanet candidates
+                      </p>
                     </div>
-                    <DataTable
-                      data={csvData}
-                      predictions={predictions}
-                      classifications={classifications}
-                      onSelectCandidate={setSelectedCandidate}
-                    />
                   </div>
-                </TabsContent>
-              </Tabs>
-            </motion.section>
-          )}
-        </AnimatePresence>
+                  <DataTable
+                    data={csvData}
+                    predictions={predictions}
+                    classifications={classifications}
+                    onSelectCandidate={handleCandidateSelectForModal}
+                    selectedCandidate={selectedCandidate}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </motion.section>
+        )}
 
         {/* Model Management Section */}
         <motion.section
@@ -288,39 +328,46 @@ export default function ExoplanetExplorer() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-chart-5/20 flex items-center justify-center">
-              <Database className="w-5 h-5 text-chart-5" />
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-chart-5/20 to-chart-5/10 flex items-center justify-center border border-chart-5/20">
+              <Database className="w-6 h-6 text-chart-5" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">
-              Model Management
-            </h2>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Model Management
+              </h2>
+              <p className="text-muted-foreground">
+                Train and manage your AI classification models
+              </p>
+            </div>
           </div>
-          <ModelManager classifications={classifications} csvData={csvData} />
+          <div className="bg-card/50 rounded-xl p-6 border border-border/50 shadow-sm">
+            <ModelManager classifications={classifications} csvData={csvData} />
+          </div>
         </motion.section>
       </main>
 
-      <footer className="border-t border-border mt-12 sm:mt-16 py-6 sm:py-8 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center gap-4">
+      <footer className="border-t border-border/50 mt-16 sm:mt-20 py-8 sm:py-12 bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="flex flex-col items-center gap-6">
             <div className="flex items-center gap-4">
               <Link
                 href="https://github.com/developpementwebbusiness/Nasa-Exoplanet"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors border border-border"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted/80 transition-all border border-border/50 shadow-sm hover:shadow-md"
               >
-                <Github className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
-                <span className="text-xs sm:text-sm font-medium text-foreground">
+                <Github className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
+                <span className="text-sm sm:text-base font-medium text-foreground">
                   View on GitHub
                 </span>
               </Link>
             </div>
-            <div className="text-center">
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+            <div className="text-center space-y-2">
+              <p className="text-sm sm:text-base font-semibold text-muted-foreground">
                 NASA Space Apps Challenge 2025 • Exoplanet Detection System
               </p>
-              <p className="text-xs mt-2 text-muted-foreground">
+              <p className="text-sm text-muted-foreground max-w-md">
                 Open Source • Powered by AI & Machine Learning • Exploring the
                 Universe
               </p>
@@ -328,6 +375,25 @@ export default function ExoplanetExplorer() {
           </div>
         </div>
       </footer>
+
+      {/* Candidate Detail Modal */}
+      <CandidateModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        candidateData={
+          selectedCandidate !== null ? csvData[selectedCandidate] : null
+        }
+        candidateIndex={selectedCandidate !== null ? selectedCandidate : 0}
+        prediction={
+          selectedCandidate !== null ? predictions[selectedCandidate] : null
+        }
+        classification={
+          selectedCandidate !== null
+            ? classifications[selectedCandidate]
+            : undefined
+        }
+        onClassify={handleClassification}
+      />
     </div>
   );
 }

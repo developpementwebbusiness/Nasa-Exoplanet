@@ -1,14 +1,16 @@
 import json
 import sqlite3
-from typing import Any, Optional, Tuple
+from typing import Any, List, Tuple, Dict
 
 class KVStore:
     """
-    Base de données clé-valeur simple.
-    - Stocke les données dans un fichier SQLite (store.db par défaut)
-    - Chaque entrée a :
-        k = clé (ex : ID ou hash)
-        v = valeur (stockée en JSON)
+    KV store SQLite minimaliste pour données déjà hachées.
+    - k = hash (str)
+    - v = résultat (JSON texte compact)
+
+    Fournit uniquement :
+      - split_with_data(hash_list) -> (known_values[list[Any]], unknown_hashes[list[str]])
+      - insert_new_many({hash: value}) -> int  (insère SANS remplacer)
     """
 
     def __init__(self, path: str = "store.db") -> None:
@@ -21,55 +23,54 @@ class KVStore:
         """)
         self.conn.commit()
 
-    def put(self, key: str, value: Any) -> None:
-        """Ajoute ou remplace la valeur associée à la clé."""
-        payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-        self.conn.execute(
-            "INSERT INTO kv (k, v) VALUES (?, ?) "
-            "ON CONFLICT(k) DO UPDATE SET v=excluded.v",
-            (key, payload),
-        )
-        self.conn.commit()
-
-    def get(self, key: str) -> Optional[Any]:
-        """Récupère la valeur pour une clé, ou None si absente."""
-        cur = self.conn.execute("SELECT v FROM kv WHERE k = ?", (key,))
-        row = cur.fetchone()
-        return json.loads(row[0]) if row else None
-
-    def exists(self, key: str) -> bool:
-        """Renvoie True si la clé existe déjà."""
-        cur = self.conn.execute("SELECT 1 FROM kv WHERE k = ? LIMIT 1", (key,))
-        return cur.fetchone() is not None
-
-    def upsert_with_check(self, key: str, value: Any) -> Tuple[bool, Any]:
-        """
-        Si la clé existe :
-            → renvoie (True, valeur_existante)
-        Sinon :
-            → stocke value et renvoie (False, value)
-        """
-        cur = self.conn.execute("SELECT v FROM kv WHERE k = ? LIMIT 1", (key,))
-        row = cur.fetchone()
-        if row:
-            return True, json.loads(row[0])
-        self.put(key, value)
-        return False, value
-
-    def delete(self, key: str) -> bool:
-        """Supprime la clé. Renvoie True si quelque chose a été supprimé."""
-        cur = self.conn.execute("DELETE FROM kv WHERE k = ?", (key,))
-        self.conn.commit()
-        return cur.rowcount > 0
-
-    def keys(self, limit: int = 100, offset: int = 0) -> list[str]:
-        """Renvoie une liste des clés présentes (pour debug)."""
-        cur = self.conn.execute(
-            "SELECT k FROM kv ORDER BY k LIMIT ? OFFSET ?", (limit, offset)
-        )
-        return [r[0] for r in cur.fetchall()]
-
     def close(self) -> None:
-        """Ferme la connexion proprement."""
         self.conn.close()
 
+    # (1) Entrée: liste de hashs -> Sortie: (valeurs connues, hashs inconnus)
+    def split_with_data(self, hash_list: List[str]) -> Tuple[List[Any], List[str]]:
+        """
+        Retourne:
+          - known_values: liste des valeurs (JSON -> Python) déjà en DB,
+                          alignées aux positions où le hash était connu.
+          - unknown_hashes: liste des hashs absents de la DB (ordre d'entrée conservé).
+        """
+        if not hash_list:
+            return [], []
+
+        # On interroge une seule fois sur les clés distinctes (pour perf),
+        # tout en préservant ensuite l'ordre et les doublons d'entrée.
+        distinct = list(dict.fromkeys(hash_list))
+        qmarks = ",".join("?" * len(distinct))
+
+        cur = self.conn.execute(f"SELECT k, v FROM kv WHERE k IN ({qmarks})", distinct)
+        existing = {k: json.loads(v) for k, v in cur.fetchall()}
+
+        known_values: List[Any] = []
+        unknown_hashes: List[str] = []
+        for h in hash_list:
+            if h in existing:
+                known_values.append(existing[h])
+            else:
+                unknown_hashes.append(h)
+
+        return known_values, unknown_hashes
+
+    # (2) Plus tard: insérer en lot ce que l'API renvoie pour les inconnus, SANS remplacer l'existant
+    # mapping = {hash: valeur_python_JSON_sérialisable}
+    def insert_new_many(self, mapping: Dict[str, Any]) -> int:
+        """
+        Insère uniquement les entrées nouvelles (ne remplace jamais une valeur existante).
+        Retourne le nombre d'items passés (pas le nombre effectivement inséré).
+        """
+        if not mapping:
+            return 0
+        rows = []
+        for k, val in mapping.items():
+            payload = json.dumps(val, ensure_ascii=False, separators=(",", ":"))
+            rows.append((k, payload))
+        with self.conn:  # transaction
+            self.conn.executemany(
+                "INSERT OR IGNORE INTO kv (k, v) VALUES (?, ?)",
+                rows,
+            )
+        return len(rows)
