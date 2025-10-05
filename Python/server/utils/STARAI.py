@@ -16,6 +16,47 @@ from rich import print
 
 
 columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
+columnKepler = [
+    'Confirmation',       # koi_disposition
+    'OrbitalPeriod',      # koi_period
+    'OPup',               # koi_period_err1
+    'OPdown',             # koi_period_err2
+    'TransEpoch',         # koi_time0bk
+    'TEup',               # koi_time0bk_err1
+    'TEdown',             # koi_time0bk_err2
+    'Impact',             # koi_impact
+    'ImpactUp',           # koi_impact_err1
+    'ImpactDown',         # koi_impact_err2
+    'TransitDur',         # koi_duration
+    'DurUp',              # koi_duration_err1
+    'DurDown',            # koi_duration_err2
+    'TransitDepth',       # koi_depth
+    'DepthUp',            # koi_depth_err1
+    'DepthDown',          # koi_depth_err2
+    'PlanetRadius',       # koi_prad
+    'RadiusUp',           # koi_prad_err1
+    'RadiusDown',         # koi_prad_err2
+    'EquilibriumTemp',    # koi_teq
+    'TempUp',             # koi_teq_err1
+    'TempDown',           # koi_teq_err2
+    'InsolationFlux',     # koi_insol
+    'InsolationUp',       # koi_insol_err1
+    'InsolationDown',     # koi_insol_err2
+    'TransitSNR',         # koi_model_snr
+    'StellarEffTemp',     # koi_steff
+    'SteffUp',            # koi_steff_err1
+    'SteffDown',          # koi_steff_err2
+    'StellarLogG',        # koi_slogg
+    'LogGUp',             # koi_slogg_err1
+    'LogGDown',           # koi_slogg_err2
+    'StellarRadius',      # koi_srad
+    'SradUp',             # koi_srad_err1
+    'SradDown',           # koi_srad_err2
+    'RA',                 # ra
+    'Dec',                # dec
+    'KeplerMag'           # koi_kepmag
+]
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
