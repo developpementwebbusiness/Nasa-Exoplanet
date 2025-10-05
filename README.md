@@ -28,7 +28,7 @@ You can either **clone** or **download** the project.
 Open your terminal or command prompt and run:
 
 ```bash
-git clone https://github.com/YourUsername/Nasa-Exoplanet.git
+git clone https://github.com/developpementwebbusiness/Nasa-Exoplanet.git
 ```
 
 ### Option 2 — Download ZIP
@@ -44,6 +44,16 @@ Alternatively, you can download the repository manually:
    ```
 
 ---
+
+## ▶️ Launching the App
+
+You can launch the app directly by navigating into the Nasa-Exoplanet folder and double-clicking the file:
+
+APP_launcher.bat
+
+---
+
+If it fails, try the following manual steps below 👇
 
 ## 💻 Open the Project Directory
 
@@ -88,9 +98,7 @@ After the build and launch process completes successfully, open your browser and
 
 🔗 **[http://localhost:3000](http://localhost:3000)**
 
-If your network allows it, you can also access it via:
-
-🔗 **[http://172.18.0.2:3000](http://172.18.0.2:3000)**
+If your network allows it, you can also access it via by searching in the cmd prompt for a second different address usually located near the previous address.
 
 ---
 
