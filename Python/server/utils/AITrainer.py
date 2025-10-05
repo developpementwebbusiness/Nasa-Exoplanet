@@ -248,7 +248,7 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,device,le,o
 
 #Function order:
 '''
-cleaning(data) en liste
+df = cleaning(data) en liste
 setup(df) en pandas
 
 loads,scale,label,x,y = setup(df)
