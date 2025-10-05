@@ -153,7 +153,7 @@ async def import_ia_files(
 @app.post("/import_ia_files")
 async def import_ia_files(
     files: List[UploadFile] = File(...),
-    ia_folder: str = "STAR_AI_v2",
+    ia_folder: str = "AI/STAR_AI_v2",
     user_id: str = "anon"
 ):
     """
