@@ -52,8 +52,11 @@ def predict_rows(rows):
     """
     
     X_nu = np.array(rows, dtype=np.float32)
+    nan_mask = np.isnan(X_nu)
+    X_nu[nan_mask] = 0.0
     X_scaled = scaler.transform(X_nu)
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
+    mask_tensor = torch.isnan(X_tensor)
 
     with torch.no_grad():
         logits = model(X_tensor) #unprocessed  output data
@@ -64,7 +67,7 @@ def predict_rows(rows):
 
     return labels,prob_scores
 
-
+'''
 rows = [[
     np.float64(2.701287801),
     np.float64(5.634e-06),
@@ -83,17 +86,17 @@ rows = [[
     np.float64(-20.9),
     np.float64(6.54),
     np.float64(1.64),
-    np.float64(-0.75),
+    np.float64(None),
     np.float64(1222.0),
     np.float64(527.81),
     np.float64(411.33),
     np.float64(-166.35),
     np.float64(48.3),
-    np.float64(5550.0),
+    np.float64(None),
     np.float64(182.0),
     np.float64(-182.0),
     np.float64(4.468),
-    np.float64(0.091),
+    np.float64(None),
     np.float64(-0.169),
     np.float64(0.91),
     np.float64(0.228),
@@ -106,3 +109,4 @@ rows = [[
 
 
 print(predict_rows(rows))
+'''
