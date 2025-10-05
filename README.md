@@ -45,6 +45,15 @@ Alternatively, you can download the repository manually:
 
 ---
 
+▶️ Launching the App
+
+You can launch the app directly by navigating into the Nasa-Exoplanet folder and double-clicking the file:
+
+APP_launcher.bat
+
+
+If it fails, try the following manual steps below 👇
+
 ## 💻 Open the Project Directory
 
 Open your **Command Prompt** (Windows) or **Terminal** (Linux/Mac).
