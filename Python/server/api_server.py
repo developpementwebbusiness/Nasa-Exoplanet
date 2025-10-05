@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
-from utils.STARPredict import predict_rows
+#from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 
 
@@ -73,7 +73,7 @@ async def predire(donnees: DonneesEntree):
         
         # Faire tourner l'IA sur les données reçues
         data = convert(donnees.features)
-        resultat_ia = predict_rows(data[0])
+        resultat_ia = []#predict_rows(data[0])
 
         "Faire la partie database"
         logger.info(f"Prédiction effectuée: {resultat_ia}")

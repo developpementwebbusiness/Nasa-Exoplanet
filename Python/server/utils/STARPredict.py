@@ -40,7 +40,7 @@ model = SimpleMLP(
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
+model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
 model.eval()  # important for evaluation
 
 def predict_rows(rows):
