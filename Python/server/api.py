@@ -291,6 +291,7 @@ async def get_available_models():
             raise HTTPException(status_code=404, detail="AI models directory not found")
         
         models = []
+        default_found = False  # Track if we've found a default model
         
         # Check all directories in AI directory
         for item in ai_dir.iterdir():
@@ -311,7 +312,11 @@ async def get_available_models():
                                 model_files.append(file.name)
                         
                         # Check if this is the default model
-                        is_default = config_data.get("default", False)
+                        # Only allow ONE default model (first one found)
+                        is_default = config_data.get("default", False) and not default_found
+                        if is_default:
+                            default_found = True
+                            logger.info(f"Default model set to: {item.name}")
                         
                         models.append({
                             "name": item.name,
