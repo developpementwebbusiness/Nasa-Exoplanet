@@ -5,24 +5,24 @@
 
 :root {
   /* Light theme with official NASA colors - NASA Blue #0B3D91 and NASA Red #FC3D21 */
-  --background: #ffffff;
-  --foreground: #000000;
-  --card: #f8f9fa;
-  --card-foreground: #000000;
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1e293b;
   --primary: #0b3d91; /* NASA Blue */
   --primary-foreground: #ffffff;
-  --secondary: #e8edf4;
+  --secondary: #f1f5f9;
   --secondary-foreground: #0b3d91;
-  --muted: #f1f3f5;
-  --muted-foreground: #6c757d;
-  --accent: #e8edf4;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #e0f2fe;
   --accent-foreground: #0b3d91;
   --destructive: #fc3d21; /* NASA Red */
   --destructive-foreground: #ffffff;
-  --border: #dee2e6;
-  --input: #dee2e6;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
   --ring: #0b3d91;
   --chart-1: #0b3d91; /* NASA Blue */
   --chart-2: #fc3d21; /* NASA Red */
@@ -31,12 +31,12 @@
   --chart-5: #ffa500; /* Orange accent */
   --radius: 0.625rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #000000;
+  --sidebar-foreground: #1e293b;
   --sidebar-primary: #0b3d91;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8edf4;
+  --sidebar-accent: #f1f5f9;
   --sidebar-accent-foreground: #0b3d91;
-  --sidebar-border: #dee2e6;
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: #0b3d91;
 }
 
@@ -121,5 +121,59 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Hide scrollbars but keep functionality */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Add cursor pointer to all interactive elements */
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  label,
+  input[type="button"],
+  input[type="submit"],
+  select {
+    cursor: pointer !important;
+  }
+
+  /* Hover transitions for buttons and tabs */
+  button,
+  [role="tab"] {
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  button:hover:not(:disabled):not(.no-hover-scale),
+  [role="tab"]:hover {
+    filter: brightness(1.1);
+  }
+
+  button:active:not(:disabled):not(.no-hover-scale),
+  [role="tab"]:active {
+    filter: brightness(0.95);
+  }
+
+  button:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.5;
+  }
+
+  /* Tab specific animations */
+  [role="tab"][data-state="active"] {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
+  [role="tab"]:not([data-state="active"]):hover {
+    background-color: hsl(var(--muted)) !important;
   }
 }
