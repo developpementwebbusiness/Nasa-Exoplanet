@@ -1,26 +1,125 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Light theme with official NASA colors - NASA Blue #0B3D91 and NASA Red #FC3D21 */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --card: #f8f9fa;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #0b3d91; /* NASA Blue */
+  --primary-foreground: #ffffff;
+  --secondary: #e8edf4;
+  --secondary-foreground: #0b3d91;
+  --muted: #f1f3f5;
+  --muted-foreground: #6c757d;
+  --accent: #e8edf4;
+  --accent-foreground: #0b3d91;
+  --destructive: #fc3d21; /* NASA Red */
+  --destructive-foreground: #ffffff;
+  --border: #dee2e6;
+  --input: #dee2e6;
+  --ring: #0b3d91;
+  --chart-1: #0b3d91; /* NASA Blue */
+  --chart-2: #fc3d21; /* NASA Red */
+  --chart-3: #00a3e0; /* Cyan accent */
+  --chart-4: #7c4dff; /* Purple accent */
+  --chart-5: #ffa500; /* Orange accent */
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #0b3d91;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8edf4;
+  --sidebar-accent-foreground: #0b3d91;
+  --sidebar-border: #dee2e6;
+  --sidebar-ring: #0b3d91;
+}
+
+.dark {
+  /* Dark theme with deep space black and vibrant NASA colors */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0e1a;
+  --card-foreground: #ffffff;
+  --popover: #0a0e1a;
+  --popover-foreground: #ffffff;
+  --primary: #1e5fd9; /* Brighter NASA Blue for dark mode */
+  --primary-foreground: #ffffff;
+  --secondary: #1a1f2e;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1f2e;
+  --muted-foreground: #a0aec0;
+  --accent: #1a2332;
+  --accent-foreground: #ffffff;
+  --destructive: #ff5733; /* Brighter NASA Red for dark mode */
+  --destructive-foreground: #ffffff;
+  --border: #2d3748;
+  --input: #2d3748;
+  --ring: #1e5fd9;
+  --chart-1: #3b82f6; /* Bright blue */
+  --chart-2: #ff5733; /* Bright red */
+  --chart-3: #00d4ff; /* Bright cyan */
+  --chart-4: #a78bfa; /* Bright purple */
+  --chart-5: #ffaa00; /* Bright orange */
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #1e5fd9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1f2e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2d3748;
+  --sidebar-ring: #1e5fd9;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
 }
