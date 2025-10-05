@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -65,7 +65,7 @@ export default function ExoplanetExplorer() {
     setIsModalOpen(true);
   };
 
-  const handleCSVUpload = async (data: any[]) => {
+  const handleCSVUpload = useCallback(async (data: any[]) => {
     setCsvData(data);
     setIsProcessing(true);
 
@@ -97,9 +97,9 @@ export default function ExoplanetExplorer() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, []);
 
-  const handleRecheck = async () => {
+  const handleRecheck = useCallback(async () => {
     if (csvData.length === 0) return;
 
     setIsProcessing(true);
@@ -131,7 +131,7 @@ export default function ExoplanetExplorer() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [csvData]);
 
   const handleClassification = (
     index: number,

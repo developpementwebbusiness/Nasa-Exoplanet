@@ -1,1 +1,0 @@
-Ceci est un fichier de démonstration pour l'upload via l'API.
