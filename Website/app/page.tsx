@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -23,6 +23,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { DataTable } from "@/components/data-table";
 import { CandidateModal } from "@/components/candidate-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { predict, csvRowToExoplanetData, checkApiHealth, type PredictionResult } from "@/lib/api-client";
 
 interface ClassificationWithComment {
   type: "exoplanet" | "not_exoplanet" | "unsure";
@@ -31,7 +32,7 @@ interface ClassificationWithComment {
 
 export default function ExoplanetExplorer() {
   const [csvData, setCsvData] = useState<any[]>([]);
-  const [predictions, setPredictions] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<PredictionResult[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
     null
   );
@@ -43,6 +44,12 @@ export default function ExoplanetExplorer() {
   const [activeView, setActiveView] = useState<"overview" | "detailed">(
     "overview"
   );
+  const [apiAvailable, setApiAvailable] = useState<boolean | null>(null);
+
+  // Check API health on mount
+  useEffect(() => {
+    checkApiHealth().then(setApiAvailable);
+  }, []);
 
   const handleCandidateSelect = (index: number) => {
     setSelectedCandidate(index);
@@ -58,28 +65,56 @@ export default function ExoplanetExplorer() {
     setIsProcessing(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/predict`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data }),
-        }
-      ).catch(() => null);
-
-      if (response?.ok) {
-        const result = await response.json();
-        setPredictions(result.predictions || []);
-      } else {
-        const mockPredictions = data.map(() => ({
-          confidence: Math.random() * 0.3 + 0.7,
-        }));
-        setPredictions(mockPredictions);
-      }
+      console.log('[UI] Converting CSV data to API format...');
+      const exoplanetData = data.map((row, index) => csvRowToExoplanetData(row, index));
+      
+      console.log(`[UI] Sending ${exoplanetData.length} candidates for prediction...`);
+      const results = await predict(exoplanetData, 'web_user');
+      
+      console.log(`[UI] Received ${results.length} predictions`);
+      setPredictions(results);
+      setApiAvailable(true);
+      
     } catch (error) {
-      console.error("[v0] Prediction error:", error);
-      const mockPredictions = data.map(() => ({
-        confidence: Math.random() * 0.3 + 0.7,
+      console.error("[UI] Prediction error:", error);
+      setApiAvailable(false);
+      
+      // Fallback: Generate mock predictions if API fails
+      const mockPredictions = data.map((row, index) => ({
+        name: row.name || row.kepoi_name || `Candidate_${index + 1}`,
+        score: Math.random() * 0.3 + 0.7,
+        label: Math.random() > 0.3,
+      }));
+      setPredictions(mockPredictions);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRecheck = async () => {
+    if (csvData.length === 0) return;
+    
+    setIsProcessing(true);
+    try {
+      console.log('[UI] Rechecking data with AI...');
+      const exoplanetData = csvData.map((row, index) => csvRowToExoplanetData(row, index));
+      
+      console.log(`[UI] Sending ${exoplanetData.length} candidates for re-prediction...`);
+      const results = await predict(exoplanetData, 'web_user');
+      
+      console.log(`[UI] Received ${results.length} updated predictions`);
+      setPredictions(results);
+      setApiAvailable(true);
+      
+    } catch (error) {
+      console.error("[UI] Re-prediction error:", error);
+      setApiAvailable(false);
+      
+      // Fallback: Generate mock predictions if API fails
+      const mockPredictions = csvData.map((row, index) => ({
+        name: row.name || row.kepoi_name || `Candidate_${index + 1}`,
+        score: Math.random() * 0.3 + 0.7,
+        label: Math.random() > 0.3,
       }));
       setPredictions(mockPredictions);
     } finally {
@@ -112,7 +147,7 @@ export default function ExoplanetExplorer() {
       predictions.length > 0
         ? (
             (predictions.reduce(
-              (sum, p) => sum + (p.confidence || p.probability || 0),
+              (sum, p) => sum + (p.score || 0),
               0
             ) /
               predictions.length) *
@@ -207,7 +242,12 @@ export default function ExoplanetExplorer() {
               </p>
             </div>
           </div>
-          <CSVUploader onUpload={handleCSVUpload} isProcessing={isProcessing} />
+          <CSVUploader 
+            onUpload={handleCSVUpload} 
+            isProcessing={isProcessing}
+            onRecheck={handleRecheck}
+            hasData={csvData.length > 0}
+          />
         </motion.section>
 
         {csvData.length > 0 && (

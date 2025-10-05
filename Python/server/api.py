@@ -6,6 +6,7 @@ import uvicorn
 import io
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 from utils.STARPredict import predict_rows
@@ -23,6 +24,15 @@ app = FastAPI(
     title="API Modèle IA",
     description="API pour communiquer avec un modèle d'intelligence artificielle",
     version="1.0.0"
+)
+
+# Configure CORS to allow requests from the Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Next.js default ports
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Ensure uploads directory exists
@@ -43,7 +53,7 @@ class ReponseIA(BaseModel):
     data: List[dict]
 
 @app.post("/predict", response_model=ReponseIA)
-async def predire(donnees: PredictRequest):
+async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None, description="Model ID to use for prediction. If not specified, uses default model.")):
     """
     Unified prediction endpoint that handles both single and batch predictions.
     
@@ -162,26 +172,6 @@ async def predire(donnees: PredictRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
-@app.get("/test_prediction")
-async def test_prediction():
-    """Test endpoint with dummy data to verify the API is working"""
-    try:
-        # ✅ 35 test values
-        test_row = [0.1 + (i * 0.02) for i in range(35)]
-        
-        labels, confidence_scores = predict_rows([test_row])
-        
-        result = [{
-            "name": "Test_Exoplanet",
-            "score": float(confidence_scores[0]),
-            "label": bool(labels[0])
-        }]
-        
-        return {"data": result}
-        
-    except Exception as e:
-        return {"error": str(e)}
-
 @app.get("/export_model")
 async def export_model(model_id: Optional[str] = Query(None, description="Model ID to export. Use 'all' for complete package, 'STAR_AI_v2' for base model only, or specify a custom model filename")):
     """
@@ -292,6 +282,63 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
     except Exception as e:
         logger.error(f"Error exporting model: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error exporting model: {str(e)}")
+
+@app.get("/models")
+async def get_available_models():
+    """
+    Get list of all available AI models.
+    Returns folders containing AI model files (.pth, .pkl, etc.) from the AI directory.
+    """
+    try:
+        ai_dir = BASE_DIR / "utils" / "Data" / "AI"
+        
+        if not ai_dir.exists():
+            raise HTTPException(status_code=404, detail="AI models directory not found")
+        
+        models = []
+        
+        # Check all items in AI directory
+        for item in ai_dir.iterdir():
+            if item.is_dir():
+                # Check if folder contains AI model files
+                has_model_files = False
+                model_files = []
+                
+                for file in item.iterdir():
+                    if file.is_file() and file.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx', '.json']:
+                        has_model_files = True
+                        model_files.append(file.name)
+                
+                if has_model_files:
+                    models.append({
+                        "name": item.name,
+                        "path": str(item.relative_to(BASE_DIR)),
+                        "files": model_files,
+                        "type": "folder"
+                    })
+        
+        # Also check for standalone model files in AI directory
+        for file in ai_dir.iterdir():
+            if file.is_file() and file.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
+                models.append({
+                    "name": file.stem,
+                    "path": str(file.relative_to(BASE_DIR)),
+                    "files": [file.name],
+                    "type": "file"
+                })
+        
+        logger.info(f"Found {len(models)} available models")
+        
+        return {
+            "models": models,
+            "total": len(models)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing models: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error listing models: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
