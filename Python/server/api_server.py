@@ -34,7 +34,6 @@ db = KVStore("store.db")
 # Ensure uploads directory exists
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
-print(UPLOAD_DIR)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Définir la structure des données d'entrée avec validation
@@ -206,7 +205,7 @@ async def export_ia_files(
     """
 
     # Chemin source: utils/Data/{ia_folder}/
-    source_path = f"utils/Data/{ia_folder}"
+    source_path = "utils" / "Data" / ia_folder
     
     if not source_path.exists():
         raise HTTPException(

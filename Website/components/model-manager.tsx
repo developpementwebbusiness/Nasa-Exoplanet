@@ -1,39 +1,48 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Brain, Download, Upload, Loader2, List, Play, Star, FileUp } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import Papa from "papaparse"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Brain,
+  Download,
+  Upload,
+  Loader2,
+  List,
+  Play,
+  Star,
+  FileUp,
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import Papa from "papaparse";
 
 interface ClassificationWithComment {
-  type: "exoplanet" | "not_exoplanet" | "unsure"
-  comment?: string
+  type: "exoplanet" | "not_exoplanet" | "unsure";
+  comment?: string;
 }
 
 interface ModelManagerProps {
-  classifications: Record<number, ClassificationWithComment>
-  csvData: any[]
+  classifications: Record<number, ClassificationWithComment>;
+  csvData: any[];
 }
 
 export function ModelManager({ classifications, csvData }: ModelManagerProps) {
-  const [models, setModels] = useState<any[]>([])
-  const [isTraining, setIsTraining] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [selectedModel, setSelectedModel] = useState<string>("default")
-  const [trainingDataset, setTrainingDataset] = useState<any[] | null>(null)
-  const [trainingFileName, setTrainingFileName] = useState<string>("")
-  const [modelName, setModelName] = useState<string>("")
-  const [modelNameError, setModelNameError] = useState<string>("")
+  const [models, setModels] = useState<any[]>([]);
+  const [isTraining, setIsTraining] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>("default");
+  const [trainingDataset, setTrainingDataset] = useState<any[] | null>(null);
+  const [trainingFileName, setTrainingFileName] = useState<string>("");
+  const [modelName, setModelName] = useState<string>("");
+  const [modelNameError, setModelNameError] = useState<string>("");
 
   useEffect(() => {
-    loadModels()
-  }, [])
+    loadModels();
+  }, []);
 
   const handleTrainingDatasetUpload = (file: File) => {
-    setTrainingFileName(file.name)
+    setTrainingFileName(file.name);
     Papa.parse(file, {
       header: true,
       dynamicTyping: true,
@@ -41,33 +50,35 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       comments: "#",
       complete: (results) => {
         const cleanedData = results.data.filter((row: any) => {
-          return Object.values(row).some((val) => val !== null && val !== "")
-        })
-        setTrainingDataset(cleanedData)
+          return Object.values(row).some((val) => val !== null && val !== "");
+        });
+        setTrainingDataset(cleanedData);
       },
       error: (error) => {
-        console.error("[v0] CSV parsing error:", error)
-        alert("Error parsing training dataset")
+        console.error("[v0] CSV parsing error:", error);
+        alert("Error parsing training dataset");
       },
-    })
-  }
+    });
+  };
 
   const handleTrainModel = async () => {
     // Validate model name
     if (!modelName.trim()) {
-      setModelNameError("Model name is required")
-      return
+      setModelNameError("Model name is required");
+      return;
     }
     if (!/^[a-z0-9_]+$/.test(modelName)) {
-      setModelNameError("Model name must be lowercase, no spaces (use _ for separation)")
-      return
+      setModelNameError(
+        "Model name must be lowercase, no spaces (use _ for separation)"
+      );
+      return;
     }
-    setModelNameError("")
+    setModelNameError("");
 
-    let trainingData
+    let trainingData;
 
     if (trainingDataset && trainingDataset.length > 0) {
-      trainingData = trainingDataset
+      trainingData = trainingDataset;
     } else {
       const classifiedData = Object.entries(classifications)
         .filter(([_, data]) => data.type !== "unsure")
@@ -75,123 +86,152 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
           data: csvData[Number.parseInt(index)],
           label: data.type === "exoplanet" ? 1 : 0,
           comment: data.comment,
-        }))
+        }));
 
       if (classifiedData.length < 10) {
-        alert("Please classify at least 10 candidates or upload a training dataset")
-        return
+        alert(
+          "Please classify at least 10 candidates or upload a training dataset"
+        );
+        return;
       }
 
-      trainingData = classifiedData
+      trainingData = classifiedData;
     }
 
-    setIsTraining(true)
+    setIsTraining(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/train`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          training_data: trainingData,
-          model_name: modelName 
-        }),
-      }).catch(() => null)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/train`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            training_data: trainingData,
+            model_name: modelName,
+          }),
+        }
+      ).catch(() => null);
 
       if (response?.ok) {
-        const result = await response.json()
-        alert(`Model "${modelName}" trained successfully! Accuracy: ${(result.accuracy * 100).toFixed(2)}%`)
+        const result = await response.json();
+        alert(
+          `Model "${modelName}" trained successfully! Accuracy: ${(
+            result.accuracy * 100
+          ).toFixed(2)}%`
+        );
       } else {
-        const mockAccuracy = 0.85 + Math.random() * 0.1
-        alert(`Model "${modelName}" trained successfully! Accuracy: ${(mockAccuracy * 100).toFixed(2)}%`)
+        const mockAccuracy = 0.85 + Math.random() * 0.1;
+        alert(
+          `Model "${modelName}" trained successfully! Accuracy: ${(
+            mockAccuracy * 100
+          ).toFixed(2)}%`
+        );
         const newModel = {
           name: modelName,
           accuracy: mockAccuracy,
           samples: trainingData.length,
           timestamp: new Date().toISOString(),
-        }
-        setModels((prev) => [...prev, newModel])
+        };
+        setModels((prev) => [...prev, newModel]);
       }
-      loadModels()
-      setTrainingDataset(null)
-      setTrainingFileName("")
-      setModelName("")
+      loadModels();
+      setTrainingDataset(null);
+      setTrainingFileName("");
+      setModelName("");
     } catch (error) {
-      console.error("[v0] Training error:", error)
+      console.error("[v0] Training error:", error);
     } finally {
-      setIsTraining(false)
+      setIsTraining(false);
     }
-  }
+  };
 
   const loadModels = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/models`).catch(() => null)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/models`
+      ).catch(() => null);
       if (response?.ok) {
-        const data = await response.json()
-        setModels(data.models || [])
+        const data = await response.json();
+        setModels(data.models || []);
       } else {
-        setModels([{ name: "default", accuracy: 0.89, samples: 1000, isDefault: true }])
+        setModels([
+          { name: "default", accuracy: 0.89, samples: 1000, isDefault: true },
+        ]);
       }
     } catch (error) {
-      console.error("[v0] Load models error:", error)
-      setModels([{ name: "default", accuracy: 0.89, samples: 1000, isDefault: true }])
+      console.error("[v0] Load models error:", error);
+      setModels([
+        { name: "default", accuracy: 0.89, samples: 1000, isDefault: true },
+      ]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleExportModel = async (modelName: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/export/${modelName}`).catch(() => null)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/export/${modelName}`
+      ).catch(() => null);
       if (response?.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `${modelName}.pkl`
-        a.click()
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${modelName}.pkl`;
+        a.click();
       } else {
-        const mockData = JSON.stringify({ model: modelName, exported: new Date().toISOString() })
-        const blob = new Blob([mockData], { type: "application/json" })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `${modelName}.json`
-        a.click()
+        const mockData = JSON.stringify({
+          model: modelName,
+          exported: new Date().toISOString(),
+        });
+        const blob = new Blob([mockData], { type: "application/json" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${modelName}.json`;
+        a.click();
       }
     } catch (error) {
-      console.error("[v0] Export error:", error)
+      console.error("[v0] Export error:", error);
     }
-  }
+  };
 
   const handleImportModel = async (file: File) => {
-    const formData = new FormData()
-    formData.append("file", file)
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/import`, {
-        method: "POST",
-        body: formData,
-      }).catch(() => null)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/import`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      ).catch(() => null);
 
       if (response?.ok) {
-        alert("Model imported successfully!")
+        alert("Model imported successfully!");
       } else {
-        alert("Model imported successfully!")
+        alert("Model imported successfully!");
         const newModel = {
           name: file.name.replace(/\.(pkl|json)$/, ""),
           accuracy: 0.8 + Math.random() * 0.15,
           samples: Math.floor(Math.random() * 500) + 100,
           timestamp: new Date().toISOString(),
-        }
-        setModels((prev) => [...prev, newModel])
+        };
+        setModels((prev) => [...prev, newModel]);
       }
-      loadModels()
+      loadModels();
     } catch (error) {
-      console.error("[v0] Import error:", error)
+      console.error("[v0] Import error:", error);
     }
-  }
+  };
 
-  const classifiedCount = Object.values(classifications).filter((c) => c.type !== "unsure").length
+  const classifiedCount = Object.values(classifications).filter(
+    (c) => c.type !== "unsure"
+  ).length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -203,29 +243,39 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
               <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-bold text-foreground text-base sm:text-lg">Train New Model</h3>
-              <p className="text-xs text-muted-foreground">Use your own dataset or classifications</p>
+              <h3 className="font-bold text-foreground text-base sm:text-lg">
+                Train New Model
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Use your own dataset or classifications
+              </p>
             </div>
           </div>
 
           <div className="bg-secondary/50 rounded-xl p-4 border-2 border-border">
-            <p className="text-sm font-semibold text-foreground mb-3">Training Dataset</p>
+            <p className="text-sm font-semibold text-foreground mb-3">
+              Training Dataset
+            </p>
 
             {trainingDataset ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between bg-primary/10 rounded-lg p-3 border border-primary/30">
                   <div className="flex items-center gap-2">
                     <FileUp className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">{trainingFileName}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {trainingFileName}
+                    </span>
                   </div>
-                  <Badge className="bg-primary text-primary-foreground">{trainingDataset.length} samples</Badge>
+                  <Badge className="bg-primary text-primary-foreground">
+                    {trainingDataset.length} samples
+                  </Badge>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setTrainingDataset(null)
-                    setTrainingFileName("")
+                    setTrainingDataset(null);
+                    setTrainingFileName("");
                   }}
                   className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
                 >
@@ -237,7 +287,10 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                 <input
                   type="file"
                   accept=".csv"
-                  onChange={(e) => e.target.files?.[0] && handleTrainingDatasetUpload(e.target.files[0])}
+                  onChange={(e) =>
+                    e.target.files?.[0] &&
+                    handleTrainingDatasetUpload(e.target.files[0])
+                  }
                   className="hidden"
                   id="training-dataset-upload"
                 />
@@ -262,15 +315,27 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
 
           <div className="bg-secondary/50 rounded-xl p-4 border-2 border-border">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground font-medium">Manual Classifications</span>
-              <Badge className={classifiedCount >= 10 ? "bg-chart-2 text-white" : "bg-muted text-muted-foreground"}>
+              <span className="text-sm text-muted-foreground font-medium">
+                Manual Classifications
+              </span>
+              <Badge
+                className={
+                  classifiedCount >= 10
+                    ? "bg-chart-2 text-white"
+                    : "bg-muted text-muted-foreground"
+                }
+              >
                 {classifiedCount} / {csvData.length}
               </Badge>
             </div>
             <div className="w-full bg-muted rounded-full h-3 border border-border overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${(classifiedCount / Math.max(csvData.length, 1)) * 100}%` }}
+                animate={{
+                  width: `${
+                    (classifiedCount / Math.max(csvData.length, 1)) * 100
+                  }%`,
+                }}
                 className="bg-chart-2 h-3"
                 transition={{ duration: 0.5 }}
               />
@@ -290,10 +355,12 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
               type="text"
               value={modelName}
               onChange={(e) => {
-                const value = e.target.value.toLowerCase().replace(/\s/g, '_');
+                const value = e.target.value.toLowerCase().replace(/\s/g, "_");
                 setModelName(value);
                 if (value && !/^[a-z0-9_]+$/.test(value)) {
-                  setModelNameError("Only lowercase letters, numbers, and underscores allowed");
+                  setModelNameError(
+                    "Only lowercase letters, numbers, and underscores allowed"
+                  );
                 } else {
                   setModelNameError("");
                 }
@@ -311,7 +378,12 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
 
           <Button
             onClick={handleTrainModel}
-            disabled={isTraining || (classifiedCount < 10 && !trainingDataset) || !modelName.trim() || !!modelNameError}
+            disabled={
+              isTraining ||
+              (classifiedCount < 10 && !trainingDataset) ||
+              !modelName.trim() ||
+              !!modelNameError
+            }
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold"
           >
             {isTraining ? (
@@ -338,8 +410,12 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                 <List className="w-5 h-5 sm:w-6 sm:h-6 text-accent-foreground" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground text-base sm:text-lg">Saved Models</h3>
-                <p className="text-xs text-muted-foreground">Manage your trained models</p>
+                <h3 className="font-bold text-foreground text-base sm:text-lg">
+                  Saved Models
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Manage your trained models
+                </p>
               </div>
             </div>
             <Button
@@ -349,13 +425,19 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
               disabled={isLoading}
               className="border-primary/30 bg-background text-foreground hover:bg-secondary"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Refresh"}
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Refresh"
+              )}
             </Button>
           </div>
 
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {models.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No models yet. Train your first model!</p>
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No models yet. Train your first model!
+              </p>
             ) : (
               models.map((model, index) => (
                 <motion.div
@@ -375,9 +457,13 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-foreground truncate">{model.name}</span>
+                        <span className="text-sm font-bold text-foreground truncate">
+                          {model.name}
+                        </span>
                         {(model.isDefault || model.name === "default") && (
-                          <Badge className="text-xs bg-primary text-primary-foreground flex-shrink-0">Default</Badge>
+                          <Badge className="text-xs bg-primary text-primary-foreground flex-shrink-0">
+                            Default
+                          </Badge>
                         )}
                       </div>
                       {model.accuracy && (
@@ -404,7 +490,9 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
             <input
               type="file"
               accept=".pkl,.json"
-              onChange={(e) => e.target.files?.[0] && handleImportModel(e.target.files[0])}
+              onChange={(e) =>
+                e.target.files?.[0] && handleImportModel(e.target.files[0])
+              }
               className="hidden"
               id="model-import"
             />
@@ -424,5 +512,5 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
         </div>
       </Card>
     </div>
-  )
+  );
 }
