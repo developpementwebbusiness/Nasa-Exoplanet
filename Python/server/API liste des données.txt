@@ -1,0 +1,1 @@
+[confirmation, Orbital Period, Transit Duration, Transit Radius, Equilibrium Temperature, Insolation Flux, Stellar Effective Temperature, Stellar Radius, RA, Dec]
