@@ -6,7 +6,7 @@ WORKDIR /Website
 # Copy only package files first (for caching)
 COPY Website/package*.json ./
 
-# Install dependencies using pnpm
+# Install dependencies using npm
 RUN npm install
 
 # Copy the rest of the source code
@@ -16,4 +16,4 @@ COPY Website/ .
 EXPOSE 3000
 
 # Run in dev mode with hot reload
-CMD ["pnpm", "run", "dev"]
+CMD ["npm", "run", "dev"]
