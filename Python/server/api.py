@@ -120,7 +120,7 @@ async def predire_batch(donnees: ExoplanetsData):
             result.append({
                 "name": f"Exoplanet_{i+1}",
                 "score": round(score, 4),
-                "label": "CONFIRMED" if score > 0.5 else "FALSE POSITIVE"
+                "label": True if score > 0.5 else False
             })
         
         return {"data": result}
