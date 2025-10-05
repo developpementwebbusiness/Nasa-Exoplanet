@@ -72,6 +72,8 @@ df.columns = columnKepler
 print(df.columns)
 #print(df)
 
+print(df.iloc[12].tolist(),df.iloc[24].tolist(),df.iloc[37].tolist())
+
 dfc = cl.clean_array(df)
 print(dfc.columns)
 #print(dfc)
@@ -94,6 +96,8 @@ binary_replace = {'CANDIDATE':'True',
                   'PC': 'True'}
 
 df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
