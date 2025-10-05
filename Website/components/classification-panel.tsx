@@ -50,10 +50,12 @@ export function ClassificationPanel({
 
   const [comment, setComment] = useState(currentClassification?.comment || "");
   const [customIndex, setCustomIndex] = useState<string>("");
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [localClassification, setLocalClassification] = useState<"exoplanet" | "not_exoplanet" | "unsure" | null>(
-    currentClassification?.type || null
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null
   );
+  const [localClassification, setLocalClassification] = useState<
+    "exoplanet" | "not_exoplanet" | "unsure" | null
+  >(currentClassification?.type || null);
 
   // Update comment when candidate changes
   useEffect(() => {
@@ -77,14 +79,14 @@ export function ClassificationPanel({
 
   const handleCustomIndexChange = (value: string) => {
     // Only allow numbers
-    const filtered = value.replace(/[^0-9]/g, '');
+    const filtered = value.replace(/[^0-9]/g, "");
     setCustomIndex(filtered);
-    
+
     // Clear previous timeout
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
     }
-    
+
     // Set new timeout - wait 500ms after user stops typing
     const timeout = setTimeout(() => {
       const num = parseInt(filtered);
@@ -92,7 +94,7 @@ export function ClassificationPanel({
         onSelectCandidate(num - 1);
       }
     }, 500);
-    
+
     setDebounceTimeout(timeout);
   };
 
@@ -164,7 +166,9 @@ export function ClassificationPanel({
                   className="w-20 h-9 pl-7 pr-2 text-center font-bold text-primary border-2 border-primary/30 focus:border-primary"
                 />
               </div>
-              <span className="text-sm text-muted-foreground font-medium">/ {csvData.length}</span>
+              <span className="text-sm text-muted-foreground font-medium">
+                / {csvData.length}
+              </span>
             </div>
           </div>
 
