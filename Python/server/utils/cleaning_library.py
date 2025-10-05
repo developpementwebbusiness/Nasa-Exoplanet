@@ -63,7 +63,7 @@ def generate_test_dataframe(rows=3000, cols=30, missing_rate=0.2):
 def clean_array(L):
     #array=pd.DataFrame(L)
     rearrange_array=rearrange_columns_by_non_none_ratio(L)
-    cleaned_arrays=clean_dataframe_by_g_logic(rearrange_array)
+    cleaned_arrays=clean_dataframe_by_g_logic(rearrange_array)[0]
     return cleaned_arrays
 
 def show_R(L):

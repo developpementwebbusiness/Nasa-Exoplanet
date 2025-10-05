@@ -62,8 +62,12 @@ StandardizedColumnNames = [
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
-def convertToCSV(filepath):
+def cleaning(filepath):
     df = pd.DataFrame(data)
+    f.columns = columnKepler
+    dfy = df.iloc[:,0]
+    dffeat = df.iloc[:,1:]
+    dffeatclean = cl.clean_array(dffeat)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up

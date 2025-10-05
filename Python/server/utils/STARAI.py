@@ -16,7 +16,7 @@ import cleaning_library as cl
 from rich import print
 
 
-columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
+#columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
 columnKepler = [
     'Confirmation',       # koi_disposition
     'OrbitalPeriod',      # koi_period
@@ -79,12 +79,29 @@ print(type(dfy),type(dffeatclean))
 
 df = pd.concat([dfy,dffeatclean],axis=1)
 
+print(type(df))
+
+binary_replace = {'CANDIDATE':'True', 
+                  'FALSE POSITIVE': 'False', 
+                  'NOT DISPOSITIONED': 'False', 
+                  'CONFIRMED': 'True',
+                  'REFUTED': 'False',
+                  'APC': 'False',
+                  'CP': 'True',
+                  'FP': 'False',
+                  'FA': 'False',
+                  'KP': 'True',
+                  'PC': 'True'}
+
+df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
 
+newcols = df.columns
 
-features = columnnames[1:]  # replace with your numeric columns that you want to keep
-label_col = columnnames[0]                  # replace with your target column that you want your model to predict
+features = newcols[1:]  # replace with your numeric columns that you want to keep
+label_col = newcols[0]                  # replace with your target column that you want your model to predict
 
 
 # numeric features -> StandardScaler
