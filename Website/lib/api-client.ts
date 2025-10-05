@@ -153,25 +153,8 @@ export async function predict(
         return await predictInBatches(exoplanetData, userId);
       }
 
-      // Single batch
-      const response = await fetch(`${API_BASE_URL}/predict`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: exoplanetData,
-          user_id: userId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error (${response.status}): ${errorText}`);
-      }
-
-      const result: PredictionResponse = await response.json();
-      return result.data;
+      // Single batch - direct API call
+      return await predictSingleBatch(exoplanetData, userId);
     }
 
     // Handle raw feature arrays
@@ -202,6 +185,33 @@ export async function predict(
 }
 
 /**
+ * Make a single batch prediction call to the API
+ */
+async function predictSingleBatch(
+  data: ExoplanetData[],
+  userId: string
+): Promise<PredictionResult[]> {
+  const response = await fetch(`${API_BASE_URL}/predict`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      data: data,
+      user_id: userId,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API Error (${response.status}): ${errorText}`);
+  }
+
+  const result: PredictionResponse = await response.json();
+  return result.data;
+}
+
+/**
  * Process large datasets in batches to avoid payload size limits
  */
 async function predictInBatches(
@@ -220,7 +230,8 @@ async function predictInBatches(
     );
 
     try {
-      const batchResults = await predict(batch, userId);
+      // Call predictSingleBatch directly to avoid recursion
+      const batchResults = await predictSingleBatch(batch, userId);
       results.push(...batchResults);
     } catch (error) {
       console.error(`[API] Error in batch ${batchNumber}:`, error);

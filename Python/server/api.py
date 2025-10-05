@@ -185,6 +185,13 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
     
     Returns: ZIP file with requested model(s) and dependencies
     """
+    return await _export_model_logic(model_id)
+
+@app.get("/export/{model_id}")
+async def _export_model_logic(model_id: Optional[str] = None):
+    """
+    Core logic for exporting AI model(s) as a ZIP file.
+    """
     try:
         # Default to 'all' if no model_id specified
         if model_id is None:
@@ -202,26 +209,12 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
                 if not model_dir.exists():
                     raise HTTPException(status_code=404, detail="Base model directory not found")
                 
-                # Add model file (required)
-                model_path = model_dir / "STAR_AI_v2.pth"
-                if model_path.exists():
-                    zip_file.write(model_path, "STAR_AI_v2/STAR_AI_v2.pth")
-                else:
-                    raise HTTPException(status_code=404, detail="Model file not found")
-                
-                # Add scaler file (required for predictions)
-                scaler_path = model_dir / "scaler.pkl"
-                if scaler_path.exists():
-                    zip_file.write(scaler_path, "STAR_AI_v2/scaler.pkl")
-                else:
-                    raise HTTPException(status_code=404, detail="Scaler file not found")
-                
-                # Add label encoder file (required for predictions)
-                le_path = model_dir / "label_encoder.pkl"
-                if le_path.exists():
-                    zip_file.write(le_path, "STAR_AI_v2/label_encoder.pkl")
-                else:
-                    raise HTTPException(status_code=404, detail="Label encoder file not found")
+                # Add ALL files from the model directory
+                for file_path in model_dir.iterdir():
+                    if file_path.is_file():
+                        # Include all model-related files: .pth, .pkl, .pt, .h5, .onnx, .json, etc.
+                        zip_file.write(file_path, f"STAR_AI_v2/{file_path.name}")
+                        logger.info(f"Added file to export: {file_path.name}")
                 
                 logger.info("Added base STAR_AI_v2 model to export")
             
@@ -287,9 +280,11 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
 async def get_available_models():
     """
     Get list of all available AI models.
-    Returns folders containing AI model files (.pth, .pkl, etc.) from the AI directory.
+    Returns only directories that contain a config.json file.
     """
     try:
+        import json
+        
         ai_dir = BASE_DIR / "utils" / "Data" / "AI"
         
         if not ai_dir.exists():
@@ -297,37 +292,45 @@ async def get_available_models():
         
         models = []
         
-        # Check all items in AI directory
+        # Check all directories in AI directory
         for item in ai_dir.iterdir():
             if item.is_dir():
-                # Check if folder contains AI model files
-                has_model_files = False
-                model_files = []
+                # Check if folder contains config.json
+                config_file = item / "config.json"
                 
-                for file in item.iterdir():
-                    if file.is_file() and file.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx', '.json']:
-                        has_model_files = True
-                        model_files.append(file.name)
-                
-                if has_model_files:
-                    models.append({
-                        "name": item.name,
-                        "path": str(item.relative_to(BASE_DIR)),
-                        "files": model_files,
-                        "type": "folder"
-                    })
+                if config_file.exists():
+                    try:
+                        # Read config.json
+                        with open(config_file, 'r') as f:
+                            config_data = json.load(f)
+                        
+                        # Get list of model files in directory
+                        model_files = []
+                        for file in item.iterdir():
+                            if file.is_file() and file.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
+                                model_files.append(file.name)
+                        
+                        # Check if this is the default model
+                        is_default = config_data.get("default", False)
+                        
+                        models.append({
+                            "name": item.name,
+                            "path": str(item.relative_to(BASE_DIR)),
+                            "model_type": config_data.get("model_type", "unknown"),
+                            "version": config_data.get("version", "unknown"),
+                            "default": is_default,
+                            "files": model_files,
+                            "config": config_data
+                        })
+                        
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Invalid JSON in {config_file}: {str(e)}")
+                        continue
+                    except Exception as e:
+                        logger.warning(f"Error reading config for {item.name}: {str(e)}")
+                        continue
         
-        # Also check for standalone model files in AI directory
-        for file in ai_dir.iterdir():
-            if file.is_file() and file.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
-                models.append({
-                    "name": file.stem,
-                    "path": str(file.relative_to(BASE_DIR)),
-                    "files": [file.name],
-                    "type": "file"
-                })
-        
-        logger.info(f"Found {len(models)} available models")
+        logger.info(f"Found {len(models)} available models with config.json")
         
         return {
             "models": models,
