@@ -12,7 +12,12 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
 
-os.chdir('Python/server/utils/Data')
+# Get the directory where this file is located
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(CURRENT_DIR, 'Data')
+
+# Ensure the Data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
 
 try:
     from . import cleaning_library as cl
@@ -86,8 +91,12 @@ def setup(df,AIname):
 
     Y = scalencode[f'{AIname}le'].fit_transform(df[label_col].values)   #transforms labels to integers
 
-    joblib.dump(scalencode[f'{AIname}scaler'], f"AI/{AIname}/scaler.pkl") # save the scaler for later use
-    joblib.dump(scalencode[f'{AIname}le'], f"AI/{AIname}/label_encoder.pkl") # save the label encoder for later use
+    # Create AI directory if it doesn't exist
+    ai_dir = os.path.join(DATA_DIR, 'AI', AIname)
+    os.makedirs(ai_dir, exist_ok=True)
+
+    joblib.dump(scalencode[f'{AIname}scaler'], os.path.join(ai_dir, "scaler.pkl")) # save the scaler for later use
+    joblib.dump(scalencode[f'{AIname}le'], os.path.join(ai_dir, "label_encoder.pkl")) # save the label encoder for later use
 
     # split data into train (70%), temp (30%)
     X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random_state=42,stratify=Y) # 70% XYtrain, 30% XYtemp, 42 for reproducibility (imagine a minecraft seed)
@@ -208,7 +217,9 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimize
     DEVICE = devicesel()
     
     best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
-    AIfilepath = f"AI/{AIname}/{AIname}.pth"
+    ai_dir = os.path.join(DATA_DIR, 'AI', AIname)
+    os.makedirs(ai_dir, exist_ok=True)
+    AIfilepath = os.path.join(ai_dir, f"{AIname}.pth")
 
     for epoch in range(epochs):   # 30 epochs example
         # --- Train on all batches in the training set ---
@@ -257,19 +268,19 @@ def AITRAIN(data,hiddenlayers=[128,64],epochs=100,AIname='NewAI'):
     classif = training(
         epochs=epochs,
         model=model,
-        train_loader=loaders['train'],
-        val_loader=loaders['validation'],
-        test_loader=loaders['test'],
+        train_loader=loaders['train'][0],
+        val_loader=loaders['validation'][0],
+        test_loader=loaders['test'][0],
         AIname=AIname,
-        device=torch.device('cpu'),
         le=scalencode[f'{AIname}le'],
         optimizer=optimizer,
         criterion=criterion
     )
 
-    model_path = f"AI/{AIname}/{AIname}.pth"
-    scaler_path = f"AI/{AIname}/scaler.pkl"
-    le_path = f"AI/{AIname}/label_encoder.pkl"
+    ai_dir = os.path.join(DATA_DIR, 'AI', AIname)
+    model_path = os.path.join(ai_dir, f"{AIname}.pth")
+    scaler_path = os.path.join(ai_dir, "scaler.pkl")
+    le_path = os.path.join(ai_dir, "label_encoder.pkl")
 
     return classif, model_path, scaler_path, le_path
 

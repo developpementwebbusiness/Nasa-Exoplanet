@@ -5,14 +5,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-os.chdir('Python/server/utils/Data')
+# Get the directory where this file is located
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(CURRENT_DIR, 'Data')
+AI_DIR = os.path.join(DATA_DIR, 'AI', 'STAR_AI_v2')
 
 #pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126 #pour installer pytorch avec cuda (gpu) si besoin
 
 #Loading scalers used for AI training
 
-scaler = joblib.load("AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
-le = joblib.load("AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
+scaler = joblib.load(os.path.join(AI_DIR, "scaler.pkl")) #to scale data the same way
+le = joblib.load(os.path.join(AI_DIR, "label_encoder.pkl")) #to convert predictions back to True and False
 
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
@@ -43,7 +46,7 @@ model = SimpleMLP(
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-model.load_state_dict(torch.load("AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
+model.load_state_dict(torch.load(os.path.join(AI_DIR, "STAR_AI_v2.pth"), map_location=torch.device("cpu"))) #to ensure it works even without cpu
 model.eval()  # important for evaluation
 
 def predict_rows(rows):
