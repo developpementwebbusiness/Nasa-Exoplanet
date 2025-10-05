@@ -6,17 +6,10 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
-from utils.hash_utils import hash_password, verify_password
+from utils.STAPredict import predict_rows
+from utils.utils_json import convert, output_json
 
-# Pour hacher un mot de passe
-password = "mon_mot_de_passe_123"
-hashed = hash_password(password)
 
-# Pour vérifier un mot de passe
-if verify_password(password, hashed):
-    print("Mot de passe correct!")
-else:
-    print("Mot de passe incorrect!")
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -82,19 +75,14 @@ async def predire(donnees: DonneesEntree):
         logger.info(f"Requête reçue de {donnees.user_id}")
         
         # Faire tourner l'IA sur les données reçues
-        
-        resultat_ia = modele_ia.predire(donnees.features)
+        data = convert(donnees.features)
+        resultat_ia = predict_rows(data)
         
         logger.info(f"Prédiction effectuée: {resultat_ia}")
         
         # Préparer la réponse JSON
-        reponse = ReponseIA(
-            statut="succès",
-            prediction=resultat_ia,
-            user_id=donnees.user_id
-        )
         
-        return reponse
+        return output_json(data_input = donnees.features, data_output=resultat_ia)
         
     except Exception as e:
         logger.error(f"Erreur lors de la prédiction: {str(e)}")
