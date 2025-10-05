@@ -13,7 +13,8 @@ or download the git library and unzip it in the designated place you want or in 
   C:\
 
 then open your command prompt (search cmd in the search bar for windows).
-<img width="1511" height="1563" alt="image" src="https://github.com/user-attachments/assets/8c69484e-dea5-42ff-9c4f-d75869078dea" />
+<img width="987" height="720" alt="image" src="https://github.com/user-attachments/assets/bed34495-3864-405e-a640-0d325936fb51" />
+
 
 go to the designated directory of your lib ex :
   cd C:\Nasa-Exoplanet
@@ -22,8 +23,11 @@ then type the command :
 Launch the installer with :
 on Windows :
   docker compose up --build
+<img width="2326" height="542" alt="image" src="https://github.com/user-attachments/assets/8e596af6-17f1-4d9d-8eed-f54de7004c69" />
+
 on Linux :
   sudo docker compose up --build
+
 
 after the program fully launched you should be able to connect to the app by inserting in your browser this address :
   http://localhost:3000
