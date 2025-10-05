@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
-from utils.STAPredict import predict_rows
+from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 
 
