@@ -10,7 +10,6 @@ from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 
 
-
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -76,12 +75,14 @@ async def predire(donnees: DonneesEntree):
         
         # Faire tourner l'IA sur les données reçues
         data = convert(donnees.features)
-        resultat_ia = predict_rows(data)
-        
+        resultat_ia = predict_rows(data[0])
+
+        "Faire la partie database"
         logger.info(f"Prédiction effectuée: {resultat_ia}")
         
         # Préparer la réponse JSON
-        return output_json(data_input = donnees.features, data_output=resultat_ia)
+        #Ajouter la bonne liste de hashage et donner la liste de donnée
+        return output_json(data_output=resultat_ia,list_hash=data[1],list_name=data[2])
         
     except Exception as e:
         logger.error(f"Erreur lors de la prédiction: {str(e)}")
