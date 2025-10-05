@@ -1,3 +1,4 @@
+import os
 import joblib
 import random
 import numpy as np
@@ -10,12 +11,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
-from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
 import cleaning_library as cl
 from rich import print
 
-
+os.chdir('Python/server/utils/Data')
 
 columnKepler = [
     'Confirmation',       
