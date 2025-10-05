@@ -63,7 +63,7 @@ columnKepler = [
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
-df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
+df = pd.read_csv('utils/Data/kepler.csv',skiprows=45)
 df.columns = columnKepler
 
 
@@ -79,7 +79,6 @@ print(dfc.columns)
 df = dfc
 
 print(type(df))
-
 
 
 binary_replace = {'CANDIDATE':'True', 
