@@ -1,84 +1,113 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Upload, Rocket, Brain, Database, Sparkles, TrendingUp, Filter, Table, Github } from "lucide-react"
-import { CSVUploader } from "@/components/csv-uploader"
-import { ProbabilityGraph } from "@/components/probability-graph"
-import { ClassificationPanel } from "@/components/classification-panel"
-import { ModelManager } from "@/components/model-manager"
-import { StatsOverview } from "@/components/stats-overview"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { DataTable } from "@/components/data-table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import {
+  Upload,
+  Rocket,
+  Brain,
+  Database,
+  Sparkles,
+  TrendingUp,
+  Filter,
+  Table,
+  Github,
+} from "lucide-react";
+import { CSVUploader } from "@/components/csv-uploader";
+import { ProbabilityGraph } from "@/components/probability-graph";
+import { ClassificationPanel } from "@/components/classification-panel";
+import { ModelManager } from "@/components/model-manager";
+import { StatsOverview } from "@/components/stats-overview";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { DataTable } from "@/components/data-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ClassificationWithComment {
-  type: "exoplanet" | "not_exoplanet" | "unsure"
-  comment?: string
+  type: "exoplanet" | "not_exoplanet" | "unsure";
+  comment?: string;
 }
 
 export default function ExoplanetExplorer() {
-  const [csvData, setCsvData] = useState<any[]>([])
-  const [predictions, setPredictions] = useState<any[]>([])
-  const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null)
-  const [classifications, setClassifications] = useState<Record<number, ClassificationWithComment>>({})
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [activeView, setActiveView] = useState<"overview" | "detailed">("overview")
+  const [csvData, setCsvData] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
+    null
+  );
+  const [classifications, setClassifications] = useState<
+    Record<number, ClassificationWithComment>
+  >({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [activeView, setActiveView] = useState<"overview" | "detailed">(
+    "overview"
+  );
 
   const handleCSVUpload = async (data: any[]) => {
-    setCsvData(data)
-    setIsProcessing(true)
+    setCsvData(data);
+    setIsProcessing(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/predict`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data }),
-      }).catch(() => null)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/predict`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data }),
+        }
+      ).catch(() => null);
 
       if (response?.ok) {
-        const result = await response.json()
-        setPredictions(result.predictions || [])
+        const result = await response.json();
+        setPredictions(result.predictions || []);
       } else {
         const mockPredictions = data.map(() => ({
           probability: Math.random(),
           confidence: Math.random() * 0.3 + 0.7,
-        }))
-        setPredictions(mockPredictions)
+        }));
+        setPredictions(mockPredictions);
       }
     } catch (error) {
-      console.error("[v0] Prediction error:", error)
+      console.error("[v0] Prediction error:", error);
       const mockPredictions = data.map(() => ({
         probability: Math.random(),
         confidence: Math.random() * 0.3 + 0.7,
-      }))
-      setPredictions(mockPredictions)
+      }));
+      setPredictions(mockPredictions);
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleClassification = (
     index: number,
     classification: "exoplanet" | "not_exoplanet" | "unsure",
-    comment?: string,
+    comment?: string
   ) => {
     setClassifications((prev) => ({
       ...prev,
       [index]: { type: classification, comment },
-    }))
-  }
+    }));
+  };
 
   const stats = {
     totalCandidates: csvData.length,
-    exoplanets: Object.values(classifications).filter((c) => c.type === "exoplanet").length,
-    notExoplanets: Object.values(classifications).filter((c) => c.type === "not_exoplanet").length,
-    unsure: Object.values(classifications).filter((c) => c.type === "unsure").length,
+    exoplanets: Object.values(classifications).filter(
+      (c) => c.type === "exoplanet"
+    ).length,
+    notExoplanets: Object.values(classifications).filter(
+      (c) => c.type === "not_exoplanet"
+    ).length,
+    unsure: Object.values(classifications).filter((c) => c.type === "unsure")
+      .length,
     avgProbability:
       predictions.length > 0
-        ? ((predictions.reduce((sum, p) => sum + (p.probability || 0), 0) / predictions.length) * 100).toFixed(1)
+        ? (
+            (predictions.reduce((sum, p) => sum + (p.probability || 0), 0) /
+              predictions.length) *
+            100
+          ).toFixed(1)
         : "0",
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,7 +123,9 @@ export default function ExoplanetExplorer() {
                 <Rocket className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">NASA Exoplanet Explorer</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
+                  NASA Exoplanet Explorer
+                </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   AI-Powered Detection • Space Apps 2025
                 </p>
@@ -117,11 +148,14 @@ export default function ExoplanetExplorer() {
               <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-2">Mission Control</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
+                Mission Control
+              </h2>
               <p className="text-sm sm:text-base text-foreground/80 leading-relaxed">
-                Welcome to the NASA Space Apps Challenge 2025 Exoplanet Detection System. Upload your Kepler telescope
-                data, analyze AI predictions, and manually classify candidates to help discover new worlds beyond our
-                solar system.
+                Welcome to the NASA Space Apps Challenge 2025 Exoplanet
+                Detection System. Upload your Kepler telescope data, analyze AI
+                predictions, and manually classify candidates to help discover
+                new worlds beyond our solar system.
               </p>
             </div>
           </div>
@@ -129,18 +163,28 @@ export default function ExoplanetExplorer() {
 
         {/* Stats Overview */}
         {csvData.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <StatsOverview stats={stats} />
           </motion.div>
         )}
 
         {/* CSV Upload Section */}
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex items-center gap-2 sm:gap-3 mb-4">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Data Upload</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+              Data Upload
+            </h2>
           </div>
           <CSVUploader onUpload={handleCSVUpload} isProcessing={isProcessing} />
         </motion.section>
@@ -154,7 +198,11 @@ export default function ExoplanetExplorer() {
               transition={{ delay: 0.4 }}
               className="space-y-6"
             >
-              <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)} className="w-full">
+              <Tabs
+                value={activeView}
+                onValueChange={(v) => setActiveView(v as any)}
+                className="w-full"
+              >
                 <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted">
                   <TabsTrigger
                     value="overview"
@@ -179,7 +227,9 @@ export default function ExoplanetExplorer() {
                       <div className="w-8 h-8 rounded-lg bg-chart-2/20 flex items-center justify-center">
                         <TrendingUp className="w-5 h-5 text-chart-2" />
                       </div>
-                      <h2 className="text-2xl font-bold text-foreground">Probability Analysis</h2>
+                      <h2 className="text-2xl font-bold text-foreground">
+                        Probability Analysis
+                      </h2>
                     </div>
                     <ProbabilityGraph
                       predictions={predictions}
@@ -194,7 +244,9 @@ export default function ExoplanetExplorer() {
                       <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center">
                         <Brain className="w-5 h-5 text-accent" />
                       </div>
-                      <h2 className="text-2xl font-bold text-foreground">Manual Classification</h2>
+                      <h2 className="text-2xl font-bold text-foreground">
+                        Manual Classification
+                      </h2>
                     </div>
                     <ClassificationPanel
                       csvData={csvData}
@@ -213,7 +265,9 @@ export default function ExoplanetExplorer() {
                       <div className="w-8 h-8 rounded-lg bg-chart-4/20 flex items-center justify-center">
                         <Filter className="w-5 h-5 text-chart-4" />
                       </div>
-                      <h2 className="text-2xl font-bold text-foreground">Candidate Data Table</h2>
+                      <h2 className="text-2xl font-bold text-foreground">
+                        Candidate Data Table
+                      </h2>
                     </div>
                     <DataTable
                       data={csvData}
@@ -229,12 +283,18 @@ export default function ExoplanetExplorer() {
         </AnimatePresence>
 
         {/* Model Management Section */}
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-lg bg-chart-5/20 flex items-center justify-center">
               <Database className="w-5 h-5 text-chart-5" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">Model Management</h2>
+            <h2 className="text-2xl font-bold text-foreground">
+              Model Management
+            </h2>
           </div>
           <ModelManager classifications={classifications} csvData={csvData} />
         </motion.section>
@@ -244,27 +304,30 @@ export default function ExoplanetExplorer() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
-              <a
-                href="https://github.com"
+              <Link
+                href="https://github.com/developpementwebbusiness/Nasa-Exoplanet"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors border border-border"
               >
                 <Github className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
-                <span className="text-xs sm:text-sm font-medium text-foreground">View on GitHub</span>
-              </a>
+                <span className="text-xs sm:text-sm font-medium text-foreground">
+                  View on GitHub
+                </span>
+              </Link>
             </div>
             <div className="text-center">
               <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                 NASA Space Apps Challenge 2025 • Exoplanet Detection System
               </p>
               <p className="text-xs mt-2 text-muted-foreground">
-                Open Source • Powered by AI & Machine Learning • Exploring the Universe
+                Open Source • Powered by AI & Machine Learning • Exploring the
+                Universe
               </p>
             </div>
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }
