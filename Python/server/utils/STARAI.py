@@ -16,7 +16,7 @@ import cleaning_library as cl
 from rich import print
 
 
-#columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
+
 columnKepler = [
     'Confirmation',       # koi_disposition
     'OrbitalPeriod',      # koi_period
