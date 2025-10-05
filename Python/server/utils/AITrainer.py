@@ -16,7 +16,7 @@ import cleaning_library as cl
 from rich import print
 
 
-#columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
+
 StandardizedColumnNames = [
     'Confirmation',       # koi_disposition
     'OrbitalPeriod',      # koi_period
@@ -59,70 +59,67 @@ StandardizedColumnNames = [
 ]
 
 
-
-#-----------------------------------------------------------------------------------------------------------------------
-#Data import
-def cleaning(filepath):
+def cleaning(data):
     df = pd.DataFrame(data)
-    f.columns = columnKepler
-    dfy = df.iloc[:,0]
-    dffeat = df.iloc[:,1:]
-    dffeatclean = cl.clean_array(dffeat)
+    df = cl.clean_array(df)
+    binary_replace = {'CANDIDATE':'True', 
+                  'FALSE POSITIVE': 'False', 
+                  'NOT DISPOSITIONED': 'False', 
+                  'CONFIRMED': 'True',
+                  'REFUTED': 'False',
+                  'APC': 'False',
+                  'CP': 'True',
+                  'FP': 'False',
+                  'FA': 'False',
+                  'KP': 'True',
+                  'PC': 'True'}
 
-#-----------------------------------------------------------------------------------------------------------------------
-#Data set-up
+    df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+    return df
 
-def setup(df,columnnames)
-    features = columnnames[1:]  # replace with your numeric columns that you want to keep
-    label_col = columnnames[0]                  # replace with your target column that you want your model to predict
+def setup(df):
+    features = StandardizedColumnNames[1:]  # replace with your numeric columns that you want to keep
+    label_col = StandardizedColumnNames[0]                  # replace with your target column that you want your model to predict
 
+    scaler = StandardScaler()
+    X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne)/ecart-type to center data and get rid of unit
 
+    le = LabelEncoder()
+    Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
-# numeric features -> StandardScaler
-scaler = StandardScaler()
-X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne)/ecart-type to center data and get rid of unit
+    joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
+    joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
 
-# encode text labels to integers (0..K-1)
-le = LabelEncoder()
-Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
-
-joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
-joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
-
-#-----------------------------------------------------------------------------------------------------------------------
-#Data split
-
-# split data into train (70%), temp (30%)
-X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random_state=42,stratify=Y) # 70% XYtrain, 30% XYtemp, 42 for reproducibility (imagine a minecraft seed)
-
-
-#stratify=Y to keep same class proportions in each split (ex: if 10% of the data is True, and 90% is False, we want the same proportions in train, val and test)
-
-# split temp into val (15%) and test (15%)
-X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=0.5, random_state=42,stratify=Y_temp) # 15% XYval, 15% XYtest (Cuz 50% of 30% is 15%)
-
-#70% training data, 15% validation data, 15% test data
+    # split data into train (70%), temp (30%)
+    X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random_state=42,stratify=Y) # 70% XYtrain, 30% XYtemp, 42 for reproducibility (imagine a minecraft seed)
 
 
+    #stratify=Y to keep same class proportions in each split (ex: if 10% of the data is True, and 90% is False, we want the same proportions in train, val and test)
 
-# convert to tensors
-X_train = torch.tensor(X_train, dtype=torch.float32)
-Y_train = torch.tensor(Y_train, dtype=torch.long)   # long for CrossEntropyLoss
-X_val   = torch.tensor(X_val, dtype=torch.float32)
-Y_val   = torch.tensor(Y_val, dtype=torch.long)
-X_test  = torch.tensor(X_test, dtype=torch.float32)
-Y_test  = torch.tensor(Y_test, dtype=torch.long)
+    # split temp into val (15%) and test (15%)
+    X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=0.5, random_state=42,stratify=Y_temp) # 15% XYval, 15% XYtest (Cuz 50% of 30% is 15%)
 
-#DataLoaders
-train_loader = DataLoader(TensorDataset(X_train, Y_train), batch_size=64, shuffle=True) #feed data in batches of 64, shuffle to randomize order each epoch
-val_loader   = DataLoader(TensorDataset(X_val, Y_val), batch_size=128, shuffle=False)
-test_loader = DataLoader(TensorDataset(X_test, Y_test), batch_size=128, shuffle=False)
+    #70% training data, 15% validation data, 15% test data
 
-#-----------------------------------------------------------------------------------------------------------------------
-#Model definition
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {DEVICE}")
+
+    # convert to tensors
+    X_train = torch.tensor(X_train, dtype=torch.float32)
+    Y_train = torch.tensor(Y_train, dtype=torch.long)   # long for CrossEntropyLoss
+    X_val   = torch.tensor(X_val, dtype=torch.float32)
+    Y_val   = torch.tensor(Y_val, dtype=torch.long)
+    X_test  = torch.tensor(X_test, dtype=torch.float32)
+    Y_test  = torch.tensor(Y_test, dtype=torch.long)
+
+    #DataLoaders
+    train_loader = DataLoader(TensorDataset(X_train, Y_train), batch_size=64, shuffle=True) #feed data in batches of 64, shuffle to randomize order each epoch
+    val_loader   = DataLoader(TensorDataset(X_val, Y_val), batch_size=128, shuffle=False)
+    test_loader = DataLoader(TensorDataset(X_test, Y_test), batch_size=128, shuffle=False)
+
+    loaders = {'train':(train_loader,X_train,Y_train),'validation':(val_loader,X_val,Y_val),'test':(test_loader,X_test,Y_test)}
+    
+    return loaders,scaler,le,X,Y
+
 
 def set_seed(seed=42): #setting seed for reproducibility on all libraries
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
@@ -151,30 +148,27 @@ class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
     def forward(self, x):
         return self.net(x)
 
-model = SimpleMLP(
-    input_dim=X.shape[1], #number of features in input data
-    hidden=[128,64],  #size of hidden layers, can be changed
-    num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
-    ).to(DEVICE)
-#-------------------------------------------------------------------------------------------------
-#Weights
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-cw = compute_class_weight('balanced', classes=np.unique(Y), y=Y)
-class_weights = torch.tensor(cw, dtype=torch.float32).to(DEVICE)
+def definemodel(X,hiddenlayers=[128,64],device=DEVICE):
+    DEVICE = device
+    model = SimpleMLP(
+        input_dim=X.shape[0], #number of features in input data
+        hidden=hiddenlayers,  #size of hidden layers, can be changed
+        num_classes=2 #number of output classes (ex: exoplanet, false positive, candidate)
+        ).to(DEVICE)
+    return model
 
-'''
-class_counts = np.bincount(Y)    # numpy counts the occurrences of each class in Y with position indicating the class 
-class_weights = torch.tensor(1.0 / (class_counts + 1e-8), dtype=torch.float32).to(DEVICE) # gives more weight to minority classes to help the model learn them better
-class_weights = class_weights / class_weights.sum() * len(class_weights) # normalize the weights around 1
-'''
+def weights(Y,model):
+    cw = compute_class_weight('balanced', classes=np.unique(Y), y=setup)
+    class_weights = torch.tensor(cw, dtype=torch.float32).to(DEVICE)
 
-#When computing the loss, misclassifying a minority class will incur a higher penalty than misclassifying a majority class
+    #When computing the loss, misclassifying a minority class will incur a higher penalty than misclassifying a majority class
 
-criterion = nn.CrossEntropyLoss(weight=class_weights)   #multiplies the loss of each class by the weights defined previously
-optimizer = optim.Adam(model.parameters(), lr=1e-3)  #Adam optimizer for weight adjustment, lr=learning rate
+    criterion = nn.CrossEntropyLoss(weight=class_weights)   #multiplies the loss of each class by the weights defined previously
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)  #Adam optimizer for weight adjustment, lr=learning rate
+    return criterion,optimizer
 
-#-----------------------------------------------------------------------------------------------------------------------
-#Training functions
 
 def train_one_epoch(model, loader, optimizer, criterion):
     #model: the neural network,loader: DataLoader for training data (ex: train_loader), optimizer: optimization algorithm, criterion: loss function
@@ -214,43 +208,54 @@ def evaluate(model, loader, criterion):
     acc = accuracy_score(trues, preds) #compute accuracy
     return running_loss / len(loader.dataset), acc #average loss and accuracy over the evaluation
 
-#-----------------------------------------------------------------------------------------------------------------------
-#Training 
+def training(epochs,model,train_loader,val_loader,test_loader,AIname,device,le,optimizer,criterion): 
 
-best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
-
-for epoch in range(1, 201):   # 30 epochs example
-    # --- Train on all batches in the training set ---
-    train_loss = train_one_epoch(model, train_loader, optimizer, criterion) 
+    DEVICE = device
     
-    # --- Evaluate on validation set (no weight updates) ---
-    val_loss, val_acc = evaluate(model, val_loader, criterion)
-    
-    # --- Check if this is the best model so far ---
-    if val_loss < best_val_loss:
-        best_val_loss = val_loss
-        # Save the model's weights to disk
-        torch.save(model.state_dict(), "Python/server/utils/Data/AI/STAR_AI_v2.pth")   # checkpoint
-    
-    # --- Print progress for this epoch ---
-    print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
+    best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
 
+    for epoch in range(epochs):   # 30 epochs example
+        # --- Train on all batches in the training set ---
+        train_loss = train_one_epoch(model, train_loader, optimizer, criterion) 
+        
+        # --- Evaluate on validation set (no weight updates) ---
+        val_loss, val_acc = evaluate(model, val_loader, criterion)
+        
+        # --- Check if this is the best model so far ---
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            # Save the model's weights to disk
+            torch.save(model.state_dict(), f"Python/server/utils/Data/AI/{AIname}/{AIname}.pth")   # checkpoint
 
-# This ensures we use the model that performed best on validation data
-model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2.pth", map_location=DEVICE))
+    # This ensures we use the model that performed best on validation data
+    model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2.pth", map_location=DEVICE))
 
-model.eval()  #same idea as the other times we called our Datakoaders
-preds, trues = [], []
-with torch.no_grad():
-    for Xb, yb in test_loader:
-        Xb, yb = Xb.to(DEVICE), yb.to(DEVICE)
-        logits = model(Xb)
-        pred = logits.argmax(dim=1).cpu().numpy()
-        preds.append(pred) ; trues.append(yb.cpu().numpy())
-preds = np.concatenate(preds)
-trues = np.concatenate(trues)
+    model.eval()  #same idea as the other times we called our Datakoaders
+    preds, trues = [], []
+    with torch.no_grad():
+        for Xb, yb in test_loader:
+            Xb, yb = Xb.to(DEVICE), yb.to(DEVICE)
+            logits = model(Xb)
+            pred = logits.argmax(dim=1).cpu().numpy()
+            preds.append(pred) ; trues.append(yb.cpu().numpy())
+    preds = np.concatenate(preds)
+    trues = np.concatenate(trues)
 
-from sklearn.metrics import classification_report
-labels = np.unique(trues)
-target_names = [str(x) for x in le.inverse_transform(labels)]
-print(classification_report(trues, preds, labels=labels, target_names=target_names))
+    from sklearn.metrics import classification_report
+    labels = np.unique(trues)
+    target_names = [str(x) for x in le.inverse_transform(labels)]
+    print(classification_report(trues, preds, labels=labels, target_names=target_names))
+
+#Function order:
+'''
+cleaning(data) en liste
+setup(df) en pandas
+
+loads,scale,label,x,y = setup(df)
+
+model = definemodel(x,hiddenlayers,device=DEVICE)
+
+cri, opti = weights(y,model)
+
+training(epochs,model,loads['train'],loads['validation'],loads['test'],AIname,device,label,opti,cri)
+'''

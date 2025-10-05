@@ -7,8 +7,9 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
-#from utils.STARPredict import predict_rows
+from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
+from utils.database import KVStore
 
 
 # Configuration du logging
@@ -24,6 +25,9 @@ app = FastAPI(
 
 # Charger le modèle IA au démarrage
 modele_ia = MonModeleIA()
+
+# Charger la database
+db = KVStore("store.db")
 
 # Ensure uploads directory exists
 BASE_DIR = pathlib.Path(__file__).resolve().parent
@@ -58,7 +62,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "model_loaded": modele_ia is not None}
+    return {"status": "healthy", "model_loaded": "None" if modele_ia is None else modele_ia}
 
 # Endpoint principal: reçoit JSON, fait tourner l'IA, renvoie JSON
 @app.post("/predict", response_model=ReponseIA)
@@ -71,24 +75,56 @@ async def predire(donnees: DonneesEntree):
     """
     try:
         logger.info(f"Requête reçue de {donnees.user_id}")
-        
-        # Faire tourner l'IA sur les données reçues
-        data = convert(donnees.features)
-        resultat_ia = []#predict_rows(data[0])
 
-        "Faire la partie database"
+        # 1) Convertir les features -> (rows, hash_list, name_list)
+        data = convert(donnees.features)
+        rows, hash_list, name_list = data[0], data[1], data[2]
+
+        # 2) Interroger la DB : séparer connus / inconnus
+        known_vals, unknown_hashes = db.split_with_data(hash_list)
+
+        if unknown_hashes:
+            # 3) Construire les lignes à prédire alignées à unknown_hashes (ordre & doublons)
+            idx_by_hash = {}
+            for i, h in enumerate(hash_list):
+                idx_by_hash.setdefault(h, []).append(i)
+
+            unknown_rows = []
+            for h in unknown_hashes:
+                i = idx_by_hash[h].pop(0)
+                unknown_rows.append(rows[i])
+
+            # 4) IA uniquement sur les inconnus
+            new_values = "UwU :3" #predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
+
+            # 5) Insert-only en DB (ne remplace jamais l’existant)
+            insert_map = {}
+            for h, val in zip(unknown_hashes, new_values):
+                if h not in insert_map:  # si hash répété, garder la 1re valeur prédite
+                    insert_map[h] = val
+            db.insert_new_many(insert_map)
+
+            # 6) Relecture DB pour obtenir toutes les valeurs alignées à hash_list
+            final_vals, still_unknown = db.split_with_data(hash_list)
+            if still_unknown:
+                logger.warning(f"Encore inconnus après insertion: {still_unknown}")
+            resultat_ia = final_vals
+        else:
+            # Tout était déjà en cache
+            resultat_ia = known_vals
+
         logger.info(f"Prédiction effectuée: {resultat_ia}")
-        
-        # Préparer la réponse JSON
-        #Ajouter la bonne liste de hashage et donner la liste de donnée
-        return {"data" : output_json(data_output=resultat_ia,list_hash=data[1],list_name=data[2])}
-        
+
+        # 7) Réponse JSON finale (valeurs alignées à hash_list)
+        return {"data": output_json(data_output=resultat_ia, list_hash=hash_list, list_name=name_list)}
+
     except Exception as e:
         logger.error(f"Erreur lors de la prédiction: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors du traitement: {str(e)}"
         )
+
 
 
 # ----------------------
