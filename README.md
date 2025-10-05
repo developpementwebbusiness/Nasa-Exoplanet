@@ -1,39 +1,99 @@
-Instructions to install the program.
+# 🚀 NASA Exoplanet App — Installation Guide
 
-Install docker desktop :
-https://www.docker.com/products/docker-desktop/
-<img width="2467" height="1085" alt="image" src="https://github.com/user-attachments/assets/617210e2-ae7b-4319-8a23-b080aa27cdf3" />
-Click on "Download Docker Desktop" and choose your operating system
+Follow these steps to install and run the NASA Exoplanet application using **Docker**.
 
-Clone the git repository on your computer
+---
 
-Clone the github librairy using the command :
+## 🧩 Prerequisites
 
-or download the git library and unzip it in the designated place you want or in the root directory of your file explorer ex :
-  C:\
+Before you begin, ensure you have **Docker Desktop** installed on your machine.
 
-then open your command prompt (search cmd in the search bar for windows).
-<img width="987" height="720" alt="image" src="https://github.com/user-attachments/assets/bed34495-3864-405e-a640-0d325936fb51" />
+### 🐳 Install Docker Desktop
 
+1. Go to the official Docker Desktop page:
+   👉 [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
 
-go to the designated directory of your lib ex :
-  cd C:\Nasa-Exoplanet
+2. Click on **“Download Docker Desktop”** and select your operating system.
 
-then type the command :
-Launch the installer with :
-on Windows :
-  docker compose up --build
-<img width="2326" height="542" alt="image" src="https://github.com/user-attachments/assets/8e596af6-17f1-4d9d-8eed-f54de7004c69" />
+   <img width="2467" height="1085" alt="Docker Desktop Download" src="https://github.com/user-attachments/assets/617210e2-ae7b-4319-8a23-b080aa27cdf3" />
 
-on Linux :
-  sudo docker compose up --build
+---
 
+## 📥 Clone the Repository
 
-after the program fully launched you should be able to connect to the app by inserting in your browser this address :
-  http://localhost:3000
+You can either **clone** or **download** the project.
 
-  or if the network configuration allows it you can also access it with :
+### Option 1 — Clone via Git
 
-  http://172.18.0.2:3000
-  
+Open your terminal or command prompt and run:
 
+```bash
+git clone https://github.com/YourUsername/Nasa-Exoplanet.git
+```
+
+### Option 2 — Download ZIP
+
+Alternatively, you can download the repository manually:
+
+1. Go to the GitHub page of the project.
+2. Click on **Code → Download ZIP**.
+3. Unzip the folder in your desired location, for example:
+
+   ```
+   C:\Nasa-Exoplanet
+   ```
+
+---
+
+## 💻 Open the Project Directory
+
+Open your **Command Prompt** (Windows) or **Terminal** (Linux/Mac).
+
+Example on Windows:
+
+<img width="987" height="720" alt="Command Prompt Example" src="https://github.com/user-attachments/assets/bed34495-3864-405e-a640-0d325936fb51" />
+
+Navigate to the directory where you cloned or extracted the project:
+
+```bash
+cd C:\Nasa-Exoplanet
+```
+
+---
+
+## ⚙️ Build and Launch the Application
+
+Once inside the project directory, run the following command to build and start the app using Docker Compose.
+
+### 🪟 On Windows
+
+```bash
+docker compose up --build
+```
+
+<img width="2326" height="542" alt="Docker Compose Windows" src="https://github.com/user-attachments/assets/8e596af6-17f1-4d9d-8eed-f54de7004c69" />
+
+### 🐧 On Linux
+
+```bash
+sudo docker compose up --build
+```
+
+---
+
+## 🌐 Access the Application
+
+After the build and launch process completes successfully, open your browser and go to:
+
+🔗 **[http://localhost:3000](http://localhost:3000)**
+
+If your network allows it, you can also access it via:
+
+🔗 **[http://172.18.0.2:3000](http://172.18.0.2:3000)**
+
+---
+
+## ✅ You’re All Set!
+
+Your NASA Exoplanet app should now be up and running!
+Enjoy exploring the universe 🌌
