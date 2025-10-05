@@ -265,6 +265,8 @@ export default function ExoplanetExplorer() {
                     predictions={predictions}
                     onSelectCandidate={handleCandidateSelect}
                     selectedCandidate={selectedCandidate}
+                    onCandidateClick={handleCandidateSelectForModal}
+                    classifications={classifications}
                   />
                 </div>
 

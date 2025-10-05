@@ -25,6 +25,8 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
   const [selectedModel, setSelectedModel] = useState<string>("default")
   const [trainingDataset, setTrainingDataset] = useState<any[] | null>(null)
   const [trainingFileName, setTrainingFileName] = useState<string>("")
+  const [modelName, setModelName] = useState<string>("")
+  const [modelNameError, setModelNameError] = useState<string>("")
 
   useEffect(() => {
     loadModels()
@@ -51,6 +53,17 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
   }
 
   const handleTrainModel = async () => {
+    // Validate model name
+    if (!modelName.trim()) {
+      setModelNameError("Model name is required")
+      return
+    }
+    if (!/^[a-z0-9_]+$/.test(modelName)) {
+      setModelNameError("Model name must be lowercase, no spaces (use _ for separation)")
+      return
+    }
+    setModelNameError("")
+
     let trainingData
 
     if (trainingDataset && trainingDataset.length > 0) {
@@ -77,17 +90,20 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/train`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ training_data: trainingData }),
+        body: JSON.stringify({ 
+          training_data: trainingData,
+          model_name: modelName 
+        }),
       }).catch(() => null)
 
       if (response?.ok) {
         const result = await response.json()
-        alert(`Model trained successfully! Accuracy: ${(result.accuracy * 100).toFixed(2)}%`)
+        alert(`Model "${modelName}" trained successfully! Accuracy: ${(result.accuracy * 100).toFixed(2)}%`)
       } else {
         const mockAccuracy = 0.85 + Math.random() * 0.1
-        alert(`Model trained successfully! Accuracy: ${(mockAccuracy * 100).toFixed(2)}%`)
+        alert(`Model "${modelName}" trained successfully! Accuracy: ${(mockAccuracy * 100).toFixed(2)}%`)
         const newModel = {
-          name: `model_${Date.now()}`,
+          name: modelName,
           accuracy: mockAccuracy,
           samples: trainingData.length,
           timestamp: new Date().toISOString(),
@@ -97,6 +113,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       loadModels()
       setTrainingDataset(null)
       setTrainingFileName("")
+      setModelName("")
     } catch (error) {
       console.error("[v0] Training error:", error)
     } finally {
@@ -265,9 +282,36 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
             </p>
           </div>
 
+          <div className="bg-secondary/50 rounded-xl p-4 border-2 border-border">
+            <label className="text-sm text-muted-foreground font-medium block mb-2">
+              Model Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={modelName}
+              onChange={(e) => {
+                const value = e.target.value.toLowerCase().replace(/\s/g, '_');
+                setModelName(value);
+                if (value && !/^[a-z0-9_]+$/.test(value)) {
+                  setModelNameError("Only lowercase letters, numbers, and underscores allowed");
+                } else {
+                  setModelNameError("");
+                }
+              }}
+              placeholder="my_exoplanet_model"
+              className="w-full px-3 py-2 rounded-lg border-2 border-border bg-background text-foreground focus:border-primary focus:outline-none transition-colors"
+            />
+            {modelNameError && (
+              <p className="text-xs text-red-500 mt-1">{modelNameError}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Lowercase only, use underscores for spaces
+            </p>
+          </div>
+
           <Button
             onClick={handleTrainModel}
-            disabled={isTraining || (classifiedCount < 10 && !trainingDataset)}
+            disabled={isTraining || (classifiedCount < 10 && !trainingDataset) || !modelName.trim() || !!modelNameError}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold"
           >
             {isTraining ? (
