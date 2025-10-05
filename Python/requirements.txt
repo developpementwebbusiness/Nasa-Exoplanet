@@ -1,4 +1,6 @@
 fastapi==0.118.0
+flask==3.1.0
+flask-cors==5.0.0
 joblib==1.5.2
 numpy==2.3.3
 pydantic==2.11.10

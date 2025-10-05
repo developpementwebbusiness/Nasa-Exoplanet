@@ -223,6 +223,77 @@ export function ColumnMapper({
   useEffect(() => {
     const autoMapping: Record<string, string> = {};
 
+    // Database mappings: [K2_value, K1/Kepler_value]
+    // K2 format: disposition, pl_orbper, pl_rade, st_teff, st_rad, etc.
+    // K1 format: koi_disposition, koi_period, koi_prad, koi_steff, koi_srad, etc.
+    const databaseMappings: Record<string, [string | null, string | null]> = {
+      Confirmation: ["disposition", "koi_disposition"],
+      OrbitalPeriod: ["pl_orbper", "koi_period"],
+      OPup: ["pl_orbpererr1", "koi_period_err1"],
+      OPdown: ["pl_orbpererr2", "koi_period_err2"],
+      TransEpoch: [null, "koi_time0bk"],
+      TEup: [null, "koi_time0bk_err1"],
+      TEdown: [null, "koi_time0bk_err2"],
+      Impact: [null, "koi_impact"],
+      ImpactUp: [null, "koi_impact_err1"],
+      ImpactDown: [null, "koi_impact_err2"],
+      TransitDur: [null, "koi_duration"],
+      DurUp: [null, "koi_duration_err1"],
+      DurDown: [null, "koi_duration_err2"],
+      TransitDepth: [null, "koi_depth"],
+      DepthUp: [null, "koi_depth_err1"],
+      DepthDown: [null, "koi_depth_err2"],
+      PlanetRadius: ["pl_rade", "koi_prad"],
+      RadiusUp: ["pl_radeerr1", "koi_prad_err1"],
+      RadiusDown: ["pl_radeerr2", "koi_prad_err2"],
+      EquilibriumTemp: ["pl_eqt", "koi_teq"],
+      TempUp: ["pl_eqterr1", "koi_teq_err1"],
+      TempDown: ["pl_eqterr2", "koi_teq_err2"],
+      InsolationFlux: ["pl_insol", "koi_insol"],
+      InsolationUp: ["pl_insolerr1", "koi_insol_err1"],
+      InsolationDown: ["pl_insolerr2", "koi_insol_err2"],
+      TransitSNR: [null, "koi_model_snr"],
+      StellarEffTemp: ["st_teff", "koi_steff"],
+      SteffUp: ["st_tefferr1", "koi_steff_err1"],
+      SteffDown: ["st_tefferr2", "koi_steff_err2"],
+      StellarLogG: [null, "koi_slogg"],
+      LogGUp: [null, "koi_slogg_err1"],
+      LogGDown: [null, "koi_slogg_err2"],
+      StellarRadius: ["st_rad", "koi_srad"],
+      SradUp: ["st_raderr1", "koi_srad_err1"],
+      SradDown: ["st_raderr2", "koi_srad_err2"],
+      RA: ["ra", "ra"],
+      Dec: ["dec", "dec"],
+      KeplerMag: [null, "koi_kepmag"],
+    };
+
+    // STEP 1: Detect which database format is being used
+    let k2Score = 0;
+    let k1Score = 0;
+
+    const csvColumnsLower = csvColumns.map((col) => col.toLowerCase());
+
+    // Count matches for each database format
+    Object.values(databaseMappings).forEach(([k2Col, k1Col]) => {
+      if (k2Col && csvColumnsLower.includes(k2Col.toLowerCase())) {
+        k2Score++;
+      }
+      if (k1Col && csvColumnsLower.includes(k1Col.toLowerCase())) {
+        k1Score++;
+      }
+    });
+
+    // Determine which database format to use (0 = K2, 1 = K1, null = neither/use fuzzy)
+    let detectedDB: 0 | 1 | null = null;
+    if (k2Score > k1Score && k2Score >= 3) {
+      detectedDB = 0; // K2 format detected
+    } else if (k1Score > k2Score && k1Score >= 3) {
+      detectedDB = 1; // K1/Kepler format detected
+    }
+
+    // Short column names that should ONLY match exactly (prevent false positives)
+    const strictMatchColumns = new Set(["ra", "dec"]);
+
     // Normalize function for better matching
     const normalize = (str: string) =>
       str
@@ -234,111 +305,153 @@ export function ColumnMapper({
       let bestMatch: string | null = null;
       let bestScore = 0;
 
+      // STEP 2: If database format detected, use exact mappings from that DB
+      if (detectedDB !== null && databaseMappings[col.key]) {
+        const dbColumnName = databaseMappings[col.key][detectedDB];
+        if (dbColumnName) {
+          // Look for exact match in CSV columns
+          const matchedCol = csvColumns.find(
+            (csvCol) => csvCol.toLowerCase() === dbColumnName.toLowerCase()
+          );
+          if (matchedCol) {
+            autoMapping[col.key] = matchedCol;
+            return; // Skip fuzzy matching - we have exact DB match
+          }
+        }
+        // If dbColumnName is null for this DB, fall through to fuzzy matching
+      }
+
+      // STEP 3: Fuzzy matching (used when no DB detected or column not in detected DB)
       csvColumns.forEach((csvCol) => {
         let score = 0;
         const csvNorm = normalize(csvCol);
         const keyNorm = normalize(col.key);
         const origNorm = normalize(col.original);
+        const csvLower = csvCol.toLowerCase();
+        const origLower = col.original.toLowerCase();
 
-        // 1. Exact match (highest priority) - 100 points
-        if (
-          csvCol.toLowerCase() === col.original.toLowerCase() ||
-          csvCol.toLowerCase() === col.key.toLowerCase()
-        ) {
-          score = 100;
-        }
-        // 2. Exact match after normalization - 90 points
-        else if (csvNorm === origNorm || csvNorm === keyNorm) {
-          score = 90;
-        }
-        // 3. Original name contains CSV column or vice versa - 80 points
-        else if (
-          col.original.toLowerCase().includes(csvCol.toLowerCase()) ||
-          csvCol.toLowerCase().includes(col.original.toLowerCase())
-        ) {
-          score = 80;
-        }
-        // 4. Normalized contains match - 70 points
-        else if (origNorm.includes(csvNorm) || csvNorm.includes(origNorm)) {
-          score = 70;
-        }
-        // 5. Key name similarity - 60 points
-        else if (keyNorm.includes(csvNorm) || csvNorm.includes(keyNorm)) {
-          score = 60;
-        }
-        // 6. Description keywords match - 50 points
-        else {
-          const descWords = col.description.toLowerCase().split(/\s+/);
-          const csvWords = csvCol.toLowerCase().split(/[_\s\-\.]/);
-          const matchingWords = descWords.filter(
-            (word) =>
-              word.length > 3 &&
-              csvWords.some(
-                (csvWord) => csvWord.includes(word) || word.includes(csvWord)
-              )
-          );
-          if (matchingWords.length > 0) {
-            score = 50 + matchingWords.length * 5;
+        // Special handling for strict match columns (ra, dec)
+        if (strictMatchColumns.has(origLower)) {
+          // Only allow exact matches for these columns
+          if (csvLower === origLower) {
+            score = 100;
           }
-        }
+          // Skip any fuzzy matching for strict columns
+        } else {
+          // 1. Exact match - 100 points
+          if (csvLower === origLower || csvLower === col.key.toLowerCase()) {
+            score = 100;
+          }
+          // 2. Exact match after normalization - 90 points
+          else if (csvNorm === origNorm || csvNorm === keyNorm) {
+            score = 90;
+          }
+          // 3. Original name contains CSV column (only if CSV column is long enough) - 80 points
+          else if (
+            csvCol.length >= 4 &&
+            (origLower.includes(csvLower) || csvLower.includes(origLower))
+          ) {
+            score = 80;
+          }
+          // 4. Normalized contains match (only if CSV is long enough) - 70 points
+          else if (
+            csvCol.length >= 4 &&
+            (origNorm.includes(csvNorm) || csvNorm.includes(origNorm))
+          ) {
+            score = 70;
+          }
+          // 5. Key name similarity (only if CSV is long enough) - 60 points
+          else if (
+            csvCol.length >= 4 &&
+            (keyNorm.includes(csvNorm) || csvNorm.includes(keyNorm))
+          ) {
+            score = 60;
+          }
+          // 6. Description keywords match - 50 points
+          else {
+            const descWords = col.description.toLowerCase().split(/\s+/);
+            const csvWords = csvLower.split(/[_\s\-\.]/);
+            const matchingWords = descWords.filter(
+              (word) =>
+                word.length > 3 &&
+                csvWords.some(
+                  (csvWord) =>
+                    csvWord.length > 3 &&
+                    (csvWord.includes(word) || word.includes(csvWord))
+                )
+            );
+            if (matchingWords.length > 0) {
+              score = 50 + matchingWords.length * 5;
+            }
+          }
 
-        // Special handling for error columns (err1, err2, up, down)
-        if (col.key.includes("Up") || col.key.includes("Down")) {
-          if (csvCol.toLowerCase().includes("err1") && col.key.includes("Up"))
-            score += 10;
-          if (csvCol.toLowerCase().includes("err2") && col.key.includes("Down"))
-            score += 10;
-          if (csvCol.toLowerCase().includes("up") && col.key.includes("Up"))
-            score += 10;
-          if (csvCol.toLowerCase().includes("down") && col.key.includes("Down"))
-            score += 10;
-        }
+          // Special handling for error columns (err1, err2, up, down)
+          if (col.key.includes("Up") || col.key.includes("Down")) {
+            if (csvLower.includes("err1") && col.key.includes("Up"))
+              score += 10;
+            if (csvLower.includes("err2") && col.key.includes("Down"))
+              score += 10;
+            if (csvLower.includes("up") && col.key.includes("Up")) score += 10;
+            if (csvLower.includes("down") && col.key.includes("Down"))
+              score += 10;
+          }
 
-        // Common aliases and variations
-        const aliases: Record<string, string[]> = {
-          OrbitalPeriod: [
-            "period",
-            "orbital_period",
-            "orb_period",
-            "koi_period",
-          ],
-          PlanetRadius: ["radius", "planet_radius", "prad", "koi_prad"],
-          TransitDepth: ["depth", "transit_depth", "koi_depth"],
-          TransitDur: ["duration", "transit_duration", "koi_duration"],
-          EquilibriumTemp: [
-            "temperature",
-            "temp",
-            "teq",
-            "koi_teq",
-            "equilibrium",
-          ],
-          InsolationFlux: ["insolation", "flux", "insol", "koi_insol"],
-          StellarEffTemp: ["stellar_temp", "steff", "koi_steff", "star_temp"],
-          StellarRadius: ["stellar_radius", "srad", "koi_srad", "star_radius"],
-          StellarLogG: ["logg", "slogg", "koi_slogg", "surface_gravity"],
-          Impact: ["impact", "impact_param", "koi_impact"],
-          TransitSNR: [
-            "snr",
-            "signal_noise",
-            "koi_model_snr",
-            "signal_to_noise",
-          ],
-          KeplerMag: ["kepmag", "koi_kepmag", "magnitude", "mag"],
-          RA: ["ra", "right_ascension", "rightascension"],
-          Dec: ["dec", "declination"],
-          Confirmation: [
-            "disposition",
-            "koi_disposition",
-            "status",
-            "confirmed",
-          ],
-          TransEpoch: ["epoch", "time0", "koi_time0bk", "transit_time"],
-        };
+          // Common aliases and variations (only for longer, more specific aliases)
+          const aliases: Record<string, string[]> = {
+            OrbitalPeriod: [
+              "period",
+              "orbital_period",
+              "orb_period",
+              "koi_period",
+            ],
+            PlanetRadius: ["radius", "planet_radius", "prad", "koi_prad"],
+            TransitDepth: ["depth", "transit_depth", "koi_depth"],
+            TransitDur: ["duration", "transit_duration", "koi_duration"],
+            EquilibriumTemp: [
+              "temperature",
+              "temp",
+              "teq",
+              "koi_teq",
+              "equilibrium",
+            ],
+            InsolationFlux: ["insolation", "flux", "insol", "koi_insol"],
+            StellarEffTemp: ["stellar_temp", "steff", "koi_steff", "star_temp"],
+            StellarRadius: [
+              "stellar_radius",
+              "srad",
+              "koi_srad",
+              "star_radius",
+            ],
+            StellarLogG: ["logg", "slogg", "koi_slogg", "surface_gravity"],
+            Impact: ["impact", "impact_param", "koi_impact"],
+            TransitSNR: [
+              "snr",
+              "signal_noise",
+              "koi_model_snr",
+              "signal_to_noise",
+            ],
+            KeplerMag: ["kepmag", "koi_kepmag", "magnitude"],
+            RA: ["right_ascension", "rightascension"],
+            Dec: ["declination"],
+            Confirmation: [
+              "disposition",
+              "koi_disposition",
+              "status",
+              "confirmed",
+            ],
+            TransEpoch: ["epoch", "time0", "koi_time0bk", "transit_time"],
+          };
 
-        if (aliases[col.key]) {
-          const csvLower = csvCol.toLowerCase();
-          if (aliases[col.key].some((alias) => csvLower.includes(alias))) {
-            score += 15;
+          if (aliases[col.key]) {
+            // Only match if the alias is substantially present (not just a substring)
+            const matchedAlias = aliases[col.key].find(
+              (alias) =>
+                csvLower === alias ||
+                (alias.length >= 4 && csvLower.includes(alias))
+            );
+            if (matchedAlias) {
+              score += 15;
+            }
           }
         }
 

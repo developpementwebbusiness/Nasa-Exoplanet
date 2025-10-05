@@ -22,6 +22,7 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
   const [showMapper, setShowMapper] = useState(false);
   const [pendingData, setPendingData] = useState<any[] | null>(null);
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
+  const [isConfirmed, setIsConfirmed] = useState(false); // Track if mapping was confirmed
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback((file: File) => {
@@ -154,6 +155,7 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
 
       setShowMapper(false);
       setPendingData(null);
+      setIsConfirmed(true); // Mark as confirmed so the UI shows the data
       onUpload(mappedData);
     },
     [pendingData, onUpload]
@@ -166,6 +168,11 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
     setRowCount(0);
     setSkippedRows(0);
     setCsvColumns([]);
+    setIsConfirmed(false); // Reset confirmation status
+    // Reset the file input to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }, []);
 
   const handleDrop = useCallback(
@@ -261,12 +268,14 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
                 <p className="text-sm text-muted-foreground">
                   {isProcessing
                     ? "Processing and analyzing data..."
-                    : fileName
+                    : fileName && isConfirmed
                     ? `${rowCount} candidates loaded${
                         skippedRows > 0
                           ? ` (${skippedRows} comment rows cleaned)`
                           : ""
                       }`
+                    : fileName && !isConfirmed
+                    ? "Mapping columns..."
                     : "Supports CSV, Excel (.xlsx/.xls), JSON, and TXT files"}
                 </p>
               </div>
@@ -285,7 +294,7 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
           </label>
         </motion.div>
 
-        {fileName && !isProcessing && (
+        {fileName && !isProcessing && isConfirmed && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
