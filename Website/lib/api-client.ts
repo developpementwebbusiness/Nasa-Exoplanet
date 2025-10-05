@@ -9,6 +9,9 @@ const API_BASE_URL =
 // Maximum number of items to send per batch to avoid large payloads
 const MAX_BATCH_SIZE = 100;
 
+// Track if a prediction is already in progress
+let predictionInProgress = false;
+
 export interface PredictionRequest {
   features?: number[] | number[][];
   data?: ExoplanetData[];
@@ -135,7 +138,23 @@ export async function predict(
   data: ExoplanetData[] | number[] | number[][],
   userId: string = "web_client"
 ): Promise<PredictionResult[]> {
+  // Prevent multiple simultaneous predictions
+  if (predictionInProgress) {
+    console.warn(
+      "[API] Prediction already in progress, ignoring duplicate call"
+    );
+    throw new Error("Prediction already in progress");
+  }
+
+  predictionInProgress = true;
+
   try {
+    console.log(
+      `[API] Starting prediction for ${
+        Array.isArray(data) ? data.length : 1
+      } items`
+    );
+
     // Check if it's array of ExoplanetData objects
     if (
       Array.isArray(data) &&
@@ -148,17 +167,21 @@ export async function predict(
       // Handle large datasets by batching
       if (exoplanetData.length > MAX_BATCH_SIZE) {
         console.log(
-          `[API] Processing ${exoplanetData.length} items in batches of ${MAX_BATCH_SIZE}`
+          `[API] Dataset is large (${exoplanetData.length} items), will process in batches of ${MAX_BATCH_SIZE}`
         );
         return await predictInBatches(exoplanetData, userId);
       }
 
       // Single batch - direct API call
+      console.log(
+        `[API] Sending single batch of ${exoplanetData.length} items`
+      );
       return await predictSingleBatch(exoplanetData, userId);
     }
 
     // Handle raw feature arrays
     else {
+      console.log(`[API] Sending raw feature arrays`);
       const response = await fetch(`${API_BASE_URL}/predict`, {
         method: "POST",
         headers: {
@@ -181,6 +204,9 @@ export async function predict(
   } catch (error) {
     console.error("[API] Prediction error:", error);
     throw error;
+  } finally {
+    predictionInProgress = false;
+    console.log("[API] Prediction completed, lock released");
   }
 }
 

@@ -443,6 +443,10 @@ export function ProbabilityGraph({
             if (e?.activePayload?.[0]?.payload) {
               const clickedData = e.activePayload[0].payload;
               onSelectCandidate(clickedData.originalIndex);
+              // Also trigger the modal if the handler exists
+              if (onCandidateClick) {
+                onCandidateClick(clickedData.originalIndex);
+              }
             }
           }}
           margin={{ top: 10, right: 30, left: 0, bottom: 80 }}
