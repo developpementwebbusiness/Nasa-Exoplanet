@@ -32,7 +32,7 @@ on Linux :
 after the program fully launched you should be able to connect to the app by inserting in your browser this address :
   http://localhost:3000
 
-  or if the networ configuration allows it you can also access it with :
+  or if the network configuration allows it you can also access it with :
 
   http://172.18.0.2:3000
   
