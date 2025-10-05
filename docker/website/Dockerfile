@@ -6,7 +6,7 @@ WORKDIR /Website
 # Copy only package files first (for caching)
 COPY Website/package*.json ./
 
-# Install dependencies using pnpm
+# Install dependencies using npm
 RUN npm install
 
 # Copy the rest of the source code
