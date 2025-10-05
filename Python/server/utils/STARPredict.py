@@ -12,6 +12,7 @@ import torch.nn.functional as F
 scaler = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
 le = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
 
+
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
     def __init__(self, input_dim, hidden=[128,64], num_classes=3, dropout=0.2):
@@ -49,7 +50,7 @@ def predict_rows(rows):
     rows: list of lists, each inner list = one sample with 8 features
     returns: list of predicted labels and conf_score
     """
-
+    
     X_nu = np.array(rows, dtype=np.float32)
     X_scaled = scaler.transform(X_nu)
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
@@ -66,4 +67,5 @@ def predict_rows(rows):
 rows = [[234,432,-394,143,231,47,643,712,-23,926],
         [769,432,-34,535,231,-43,643,798,23,726]]
 
-predict_rows(rows)
+a,b = predict_rows(rows)
+print(a,b)

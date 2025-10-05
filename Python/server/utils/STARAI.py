@@ -29,8 +29,10 @@ df = pd.read_csv('Python/server/utils/Data/ExoHarmonious')
 features = columnnames[1:]  # replace with your numeric columns that you want to keep
 label_col = columnnames[0]                  # replace with your target column that you want your model to predict
 
+'''
 imputer = IterativeImputer()
 df[features] = imputer.fit_transform(df[features])
+'''
 
 # numeric features -> StandardScaler
 scaler = StandardScaler()
@@ -40,8 +42,8 @@ X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne
 le = LabelEncoder()
 Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
-joblib.dump(scaler, "scaler.pkl") # save the scaler for later use
-joblib.dump(le, "label_encoder.pkl") # save the label encoder for later use
+joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
+joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data split
