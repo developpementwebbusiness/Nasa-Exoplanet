@@ -16,4 +16,4 @@ COPY Website/ .
 EXPOSE 3000
 
 # Run in dev mode with hot reload
-CMD ["pnpm", "run", "dev"]
+CMD ["npm", "run", "dev"]
