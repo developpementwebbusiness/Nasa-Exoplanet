@@ -6,6 +6,17 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
+from utils.hash_utils import hash_password, verify_password
+
+# Pour hacher un mot de passe
+password = "mon_mot_de_passe_123"
+hashed = hash_password(password)
+
+# Pour vérifier un mot de passe
+if verify_password(password, hashed):
+    print("Mot de passe correct!")
+else:
+    print("Mot de passe incorrect!")
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
