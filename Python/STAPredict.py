@@ -65,4 +65,3 @@ def predict_rows(rows):
 
 rows = [[0.1, 0.3, 0.5, 0.2, 0.9, 0.7, 0.1, 0.05]]
 labels, probs = predict_rows(rows)
-print(f"Exoplanet ?: {labels[0]}, Confidence: {probs[0]}")
