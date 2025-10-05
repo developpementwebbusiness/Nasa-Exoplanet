@@ -22,7 +22,6 @@ os.chdir('C:/Coding/PythonScripts/Data')
 
 columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
 
-#filepath = 'ExoPlanetHarmony.csv' #ex: KOI/TOI/K2 cumulative table data csv file path
 
 #This code can be used to concactenate more databases
 #'''
