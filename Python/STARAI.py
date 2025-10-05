@@ -10,11 +10,12 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-import matplotlib.pyplot as plt
-import seaborn as sns
 from rich import print
+
+os.chdir('C:/Coding/PythonScripts/Data')
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
@@ -22,6 +23,8 @@ from rich import print
 columnnames = ['Confirmation','OrbitalPeriod','PlanetRadius','InsolationFlux','EquilibriumTemp','StellarEffectiveTemp','StellarRadius','RA','Dec']
 
 filepath = 'ExoPlanetHarmony.csv' #ex: KOI/TOI/K2 cumulative table data csv file path
+
+'''This code can be used to concactenate more databases
 fileKOI = 'KOIHarmony.csv'
 fileK2 = 'K2Harmony.csv'
 fileTOI = 'TOIHarmony.csv'
@@ -32,6 +35,9 @@ dfk2 = pd.read_csv(fileK2, skiprows=17,usecols=[0,1,2,3,4,5,6,8,10]) #bad ratio
 dfk2.columns = columnnames
 dft = pd.read_csv(fileTOI, skiprows=35,usecols=[0,1,5,9,13,17,21,26,28]) #0.57
 dft.columns = columnnames
+'''
+
+
 
 binary_replace = {'CANDIDATE':'True', 
                   'FALSE POSITIVE': 'False', 
@@ -57,13 +63,16 @@ df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x
 features = ['OrbitalPeriod','PlanetRadius','InsolationFlux','EquilibriumTemp','StellarEffectiveTemp','StellarRadius','RA','Dec']   # replace with your numeric columns that you want to keep
 label_col = 'Confirmation'                   # replace with your target column that you want your model to predict
 
-# encode text labels to integers (0..K-1)
-le = LabelEncoder()
-Y = le.fit_transform(df[label_col].values)   # keep `le` to invert later
+imputer = IterativeImputer()
+df[features] = imputer.fit_transform(df[features])
 
 # numeric features -> StandardScaler
 scaler = StandardScaler()
 X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne)/ecart-type to center data and get rid of unit
+
+# encode text labels to integers (0..K-1)
+le = LabelEncoder()
+Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
 joblib.dump(scaler, "scaler.pkl") # save the scaler for later use
 joblib.dump(le, "label_encoder.pkl") # save the label encoder for later use
@@ -130,16 +139,20 @@ class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
 model = SimpleMLP(
     input_dim=X.shape[1], #number of features in input data
-    hidden=[1028,512,256,128,64],  #size of hidden layers, can be changed
+    hidden=[128,64],  #size of hidden layers, can be changed
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     ).to(DEVICE)
-
-#-----------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------
 #Weights
 
+cw = compute_class_weight('balanced', classes=np.unique(Y), y=Y)
+class_weights = torch.tensor(cw, dtype=torch.float32).to(DEVICE)
+
+'''
 class_counts = np.bincount(Y)    # numpy counts the occurrences of each class in Y with position indicating the class 
 class_weights = torch.tensor(1.0 / (class_counts + 1e-8), dtype=torch.float32).to(DEVICE) # gives more weight to minority classes to help the model learn them better
 class_weights = class_weights / class_weights.sum() * len(class_weights) # normalize the weights around 1
+'''
 
 #When computing the loss, misclassifying a minority class will incur a higher penalty than misclassifying a majority class
 
@@ -186,3 +199,43 @@ def evaluate(model, loader, criterion):
     preds = np.concatenate(preds); trues = np.concatenate(trues) #sqish lists into single arrays
     acc = accuracy_score(trues, preds) #compute accuracy
     return running_loss / len(loader.dataset), acc #average loss and accuracy over the evaluation
+
+#-----------------------------------------------------------------------------------------------------------------------
+#Training 
+
+best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
+
+for epoch in range(1, 201):   # 30 epochs example
+    # --- Train on all batches in the training set ---
+    train_loss = train_one_epoch(model, train_loader, optimizer, criterion) 
+    
+    # --- Evaluate on validation set (no weight updates) ---
+    val_loss, val_acc = evaluate(model, val_loader, criterion)
+    
+    # --- Check if this is the best model so far ---
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        # Save the model's weights to disk
+        torch.save(model.state_dict(), "STAR_AI.pth")   # checkpoint
+    
+    # --- Print progress for this epoch ---
+    print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
+
+
+# This ensures we use the model that performed best on validation data
+model.load_state_dict(torch.load("STAR_AI.pth", map_location=DEVICE))
+
+model.eval()  #same idea as the other times we called our Datakoaders
+preds, trues = [], []
+with torch.no_grad():
+    for Xb, yb in test_loader:
+        Xb, yb = Xb.to(DEVICE), yb.to(DEVICE)
+        logits = model(Xb)
+        pred = logits.argmax(dim=1).cpu().numpy()
+        preds.append(pred) ; trues.append(yb.cpu().numpy())
+preds = np.concatenate(preds)
+trues = np.concatenate(trues)
+
+from sklearn.metrics import classification_report
+labels = np.unique(trues)
+print(classification_report(trues, preds, labels=labels, target_names=le.inverse_transform(labels)))

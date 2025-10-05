@@ -1,20 +1,16 @@
 import joblib
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.metrics import accuracy_score, classification_report
-import PredictiveModel_AI as ai
 import torch.nn.functional as F
+
 
 #pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126 #pour installer pytorch avec cuda (gpu) si besoin
 
-scaler = joblib.load("scaler.pkl")
-le = joblib.load("label_encoder.pkl")
+#Loading scalers used for AI training
+
+scaler = joblib.load("scaler.pkl") #to scale data the same way
+le = joblib.load("label_encoder.pkl") #to convert predictions back to True and False
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
@@ -51,7 +47,7 @@ def predict_rows(rows):
 
     """
     rows: list of lists, each inner list = one sample with 8 features
-    returns: list of predicted labels
+    returns: list of predicted labels and conf_score
     """
 
     X_nu = np.array(rows, dtype=np.float32)
