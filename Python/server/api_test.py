@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Query, UploadFile, File, BackgroundT
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union, Dict, Any
 from utils.STARPredict import predict_rows
-from utils.AITrainer import training
+from utils.AITrainer import AITRAIN
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
 from fastapi.responses import Response
@@ -277,13 +277,11 @@ def training_worker(training_id: str, training_data: TrainingData):
                     training_status[training_id]["estimated_time_remaining"] = f"{estimated_remaining/60:.1f} min"
                 logger.info(f"Training {training_id}: Epoch {epoch}/{total_epochs}, Loss: {loss}, Acc: {accuracy}")
         # Appel training
-        result = training(
+        result = AITRAIN(
             data=rows,
-            labels=labels,
             hiddenlayers=training_data.hidden_layers,
             epochs=training_data.epochs,
             AIname=training_data.ai_name,
-            progress_callback=progress_callback
         )
         # Chemins de fichiers
         model_dir = AI_MODELS_DIR / training_data.ai_name
