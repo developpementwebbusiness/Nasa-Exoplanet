@@ -10,7 +10,7 @@ RUN npm install -g npm
 COPY Website/package*.json ./
 
 # Install dependencies using pnpm
-RUN pnpm install --frozen-lockfile
+RUN npm install --frozen-lockfile
 
 # Copy the rest of the source code
 COPY Website/ .
