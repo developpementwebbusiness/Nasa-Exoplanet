@@ -27,8 +27,11 @@ app = FastAPI(
     version="1.0.0"
 )
 
+<<<<<<< HEAD:Python/server/api_server.py
+=======
 # Charger le modèle IA au démarrage
 modele_ia = MonModeleIA() # TODO
+>>>>>>> f0c95f1f9d257e15efd12c344bb5a1c13063900d:Python/server/api_server (backup).py
 
 # Charger la database
 db = KVStore("store.db")
@@ -54,19 +57,6 @@ class DonneesEntree(BaseModel):
 # Définir la structure des données de sortie
 class ReponseIA(BaseModel):
     data : list[dict]
-
-# Endpoint de santé pour vérifier que l'API fonctionne
-@app.get("/")
-async def root():
-    return {
-        "message": "API Modèle IA opérationnelle",
-        "version": "1.0.0",
-        "endpoints": ["/predict", "/health"]
-    }
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "model_loaded": "None" if modele_ia is None else modele_ia}
 
 # Endpoint principal: reçoit JSON, fait tourner l'IA, renvoie JSON
 @app.post("/predict", response_model=ReponseIA)
@@ -99,7 +89,11 @@ async def predire(donnees: DonneesEntree):
                 unknown_rows.append(rows[i])
 
             # 4) IA uniquement sur les inconnus
+<<<<<<< HEAD:Python/server/api_server.py
+            new_values = predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
+=======
             new_values = None #predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
+>>>>>>> f0c95f1f9d257e15efd12c344bb5a1c13063900d:Python/server/api_server (backup).py
 
             # 5) Insert-only en DB (ne remplace jamais l’existant)
             insert_map = {}
@@ -129,6 +123,8 @@ async def predire(donnees: DonneesEntree):
             detail=f"Erreur lors du traitement: {str(e)}"
         )
 
+<<<<<<< HEAD:Python/server/api_server.py
+=======
 # ----------------------
 # File upload / download
 # ----------------------
@@ -276,6 +272,7 @@ async def export_ia_files(
     finally:
         zip_buffer.close()
 
+>>>>>>> f0c95f1f9d257e15efd12c344bb5a1c13063900d:Python/server/api_server (backup).py
 # Lancer le serveur
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

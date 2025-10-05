@@ -24,7 +24,7 @@ services:
     volumes:
       - .:/app
     restart: always
-    command: ["python", "api_server.py"]
+    command: ["python", "api.py"]
 
 networks:
   app_network:  # Updated network name to make it tutorial-friendly
