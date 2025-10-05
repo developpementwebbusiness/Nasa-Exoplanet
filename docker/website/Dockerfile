@@ -4,7 +4,7 @@ FROM node:24.9-alpine3.21
 WORKDIR /Website
 
 # Install pnpm globally
-RUN npm install -g pnpm
+RUN npm install -g npm
 
 # Copy only package files first (for caching)
 COPY Website/package*.json ./
