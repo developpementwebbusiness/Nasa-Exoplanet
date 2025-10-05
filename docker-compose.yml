@@ -11,6 +11,7 @@ services:
       - app_network  # Updated network name for consistency
 
   flask-service:
+    image: coolcraft71/python_backend:latest
     build:
       context: .
       dockerfile: docker/server/Dockerfile
@@ -24,6 +25,7 @@ services:
     volumes:
       - .:/app
     restart: always
+    command: ["python", "api_server.py"]
 
 networks:
   app_network:  # Updated network name to make it tutorial-friendly
