@@ -11,7 +11,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.experimental import enable_iterative_imputer
-import cleaning_library as cl
+import utils.cleaning_library as cl
 
 
 StandardizedColumnNames = ['Confirmation', 
