@@ -66,20 +66,11 @@ columnKepler = [
 df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
 df.columns = columnKepler
 
-dfy = df.iloc[:,0]
-dffeat = df.iloc[:,1:]
-dffeatclean = cl.clean_array(dffeat)
-
-#print('dfy',dfy)
-#print('dffeat',dffeat)
-#print('dffeatclean',dffeatclean)
-
-print(type(dffeat))
-print(type(dfy),type(dffeatclean))
-
-df = pd.concat([dfy,dffeatclean],axis=1)
+df = cl.clean_array(df)
 
 print(type(df))
+print(df.columns)
+print(df.shape[0])
 
 binary_replace = {'CANDIDATE':'True', 
                   'FALSE POSITIVE': 'False', 
@@ -94,6 +85,7 @@ binary_replace = {'CANDIDATE':'True',
                   'PC': 'True'}
 
 df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+print(df)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
@@ -256,14 +248,14 @@ for epoch in range(1, 201):   # 30 epochs example
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         # Save the model's weights to disk
-        torch.save(model.state_dict(), "Python/server/utils/Data/AI/STAR_AI_v2.pth")   # checkpoint
+        torch.save(model.state_dict(), "Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth")   # checkpoint
     
     # --- Print progress for this epoch ---
     print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
 
 
 # This ensures we use the model that performed best on validation data
-model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2.pth", map_location=DEVICE))
+model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=DEVICE))
 
 model.eval()  #same idea as the other times we called our Datakoaders
 preds, trues = [], []

@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Upload, FileUp, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ColumnMapper } from "@/components/column-mapper";
 import Papa from "papaparse";
 
 interface CSVUploaderProps {
@@ -18,6 +19,9 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [rowCount, setRowCount] = useState<number>(0);
   const [skippedRows, setSkippedRows] = useState<number>(0);
+  const [showMapper, setShowMapper] = useState(false);
+  const [pendingData, setPendingData] = useState<any[] | null>(null);
+  const [csvColumns, setCsvColumns] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -54,7 +58,14 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
               );
             });
             setRowCount(cleanData.length);
-            onUpload(cleanData);
+            
+            // Get column names from the first row
+            if (cleanData.length > 0) {
+              const columns = Object.keys(cleanData[0] as Record<string, any>);
+              setCsvColumns(columns);
+              setPendingData(cleanData);
+              setShowMapper(true);
+            }
           },
           error: (error) => {
             console.error("[v0] CSV parsing error:", error);
@@ -69,7 +80,14 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
             const dataArray = Array.isArray(jsonData) ? jsonData : [jsonData];
             setRowCount(dataArray.length);
             setSkippedRows(0);
-            onUpload(dataArray);
+            
+            // Get column names from the first item
+            if (dataArray.length > 0) {
+              const columns = Object.keys(dataArray[0]);
+              setCsvColumns(columns);
+              setPendingData(dataArray);
+              setShowMapper(true);
+            }
           } catch (error) {
             console.error("[v0] JSON parsing error:", error);
           }
@@ -102,14 +120,56 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
             });
             setRowCount(data.length);
             setSkippedRows(0);
-            onUpload(data);
+            
+            // Get column names
+            if (data.length > 0) {
+              const columns = Object.keys(data[0]);
+              setCsvColumns(columns);
+              setPendingData(data);
+              setShowMapper(true);
+            }
           }
         };
         reader.readAsText(file);
       }
     },
-    [onUpload]
+    []
   );
+
+  const handleMappingConfirm = useCallback(
+    (mapping: Record<string, string>) => {
+      if (!pendingData) return;
+
+      // Apply the mapping to transform the data
+      const mappedData = pendingData.map((row) => {
+        const newRow: any = {};
+        
+        // Keep original data
+        Object.assign(newRow, row);
+        
+        // Add mapped columns with standardized names
+        Object.entries(mapping).forEach(([standardKey, csvColumn]) => {
+          newRow[standardKey] = row[csvColumn];
+        });
+        
+        return newRow;
+      });
+
+      setShowMapper(false);
+      setPendingData(null);
+      onUpload(mappedData);
+    },
+    [pendingData, onUpload]
+  );
+
+  const handleMappingCancel = useCallback(() => {
+    setShowMapper(false);
+    setPendingData(null);
+    setFileName(null);
+    setRowCount(0);
+    setSkippedRows(0);
+    setCsvColumns([]);
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -149,7 +209,16 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
   );
 
   return (
-    <div className="space-y-4">
+    <>
+      {showMapper && (
+        <ColumnMapper
+          csvColumns={csvColumns}
+          onConfirm={handleMappingConfirm}
+          onCancel={handleMappingCancel}
+        />
+      )}
+      
+      <div className="space-y-4">
       <motion.div
         onDragOver={(e) => {
           e.preventDefault();
@@ -241,5 +310,6 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
         </motion.div>
       )}
     </div>
+    </>
   );
 }

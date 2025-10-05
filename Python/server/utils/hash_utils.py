@@ -1,6 +1,6 @@
 import hashlib
 
-def calculate_hash(data: str, algorithm: str = 'sha256') -> str:
+def calculate_hash(data: str, algorithm: str = 'md5') -> str:
     """
     Calcule un hash déterministe d'une chaîne de caractères
     
@@ -23,7 +23,7 @@ def calculate_hash(data: str, algorithm: str = 'sha256') -> str:
     # Retourner le hash en hexadécimal
     return hasher.hexdigest()
 
-def verify_hash(data: str, expected_hash: str, algorithm: str = 'sha256') -> bool:
+def verify_hash(data: str, expected_hash: str, algorithm: str = 'md5') -> bool:
     """
     Vérifie si une donnée correspond à un hash
     
