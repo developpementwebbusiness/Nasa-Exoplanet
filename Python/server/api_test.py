@@ -218,19 +218,21 @@ async def predire(donnees: PredictRequest):
 
 # ================== FONCTIONS D'ENTRAÎNEMENT ==================
 
+# Dans training_worker, remplacer l'appel
 def training_worker(training_id: str, training_data: TrainingData):
     """
-    Worker function : exécute l'entraînement en arrière-plan et prépare les données sous forme 
-    rows = [[np.float64, ...], ...], labels = [label ...], comme le demande votre fonction training().
+    Worker function qui exécute l'entraînement en arrière-plan
     """
     try:
+        import pandas as pd
         import numpy as np
+        
         training_status[training_id]["status"] = "training"
         training_status[training_id]["start_time"] = datetime.now().isoformat()
         
         logger.info(f"Début de l'entraînement {training_id} pour {training_data.ai_name}")
-
-        # ~~~~ Conversion stricte entrée (features 35 floats, autant que keys_order) ~~~~
+        
+        # Créer DataFrame
         keys_order = [
             'OrbitalPeriod', 'OPup', 'OPdown', 'TransEpoch', 'TEup', 'TEdown',
             'Impact', 'ImpactUp', 'ImpactDown', 'TransitDur', 'DurUp', 'DurDown',
@@ -239,55 +241,33 @@ def training_worker(training_id: str, training_data: TrainingData):
             'TransitSNR', 'StellarEffTemp', 'SteffUp', 'SteffDown', 'StellarLogG', 'LogGUp', 'LogGDown',
             'StellarRadius', 'SradUp', 'SradDown', 'RA', 'Dec', 'KeplerMag'
         ]
-        rows = []
-        labels = []
+        
+        data_dicts = []
         for row_data in training_data.data:
-            row = []
+            row_dict = {}
             for key in keys_order:
                 value = row_data.get(key)
-                if value is None or (isinstance(value, float) and np.isnan(value)):
-                    row.append(np.float64(0.0))
-                else:
-                    try:
-                        row.append(np.float64(float(value)))
-                    except Exception:
-                        row.append(np.float64(0.0))
-            rows.append(row)
-            # Encodage du label string -> 1/0, à adapter à votre code d'entraînement réel
-            label_raw = row_data.get('label', None)
-            if label_raw is None:
-                labels.append(0)
-            elif isinstance(label_raw, (int, float)):
-                labels.append(int(label_raw))
-            else:
-                labels.append(1 if str(label_raw).lower().startswith('conf') else 0)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Callback pour suivi
-        def progress_callback(epoch, total_epochs, loss, accuracy):
-            if training_id in training_status:
-                training_status[training_id]["current_epoch"] = epoch
-                training_status[training_id]["progress_percent"] = (epoch / total_epochs) * 100
-                training_status[training_id]["loss"] = float(loss) if loss is not None else None
-                training_status[training_id]["accuracy"] = float(accuracy) if accuracy is not None else None
-                elapsed_time = datetime.now() - datetime.fromisoformat(training_status[training_id]["start_time"])
-                if epoch > 0:
-                    time_per_epoch = elapsed_time.total_seconds() / epoch
-                    remaining_epochs = total_epochs - epoch
-                    estimated_remaining = remaining_epochs * time_per_epoch
-                    training_status[training_id]["estimated_time_remaining"] = f"{estimated_remaining/60:.1f} min"
-                logger.info(f"Training {training_id}: Epoch {epoch}/{total_epochs}, Loss: {loss}, Acc: {accuracy}")
-        # Appel training
-        result = AITRAIN(
-            data=rows,
+                row_dict[key] = float(value) if value is not None else 0.0
+            
+            # Ajouter le label (colonne attendue par AITRAIN)
+            label = row_data.get('label', row_data.get('Confirmation', 'UNKNOWN'))
+            row_dict['label'] = label
+            
+            data_dicts.append(row_dict)
+        
+        df = pd.DataFrame(data_dicts)
+        
+        logger.info(f"DataFrame: {len(df)} lignes, colonnes: {list(df.columns)}")
+        
+        # ✅ Appeler AITRAIN (pas training)
+        classif, model_path, scaler_path, le_path = AITRAIN(
+            data=df,
             hiddenlayers=training_data.hidden_layers,
             epochs=training_data.epochs,
-            AIname=training_data.ai_name,
+            AIname=training_data.ai_name
         )
-        # Chemins de fichiers
-        model_dir = AI_MODELS_DIR / training_data.ai_name
-        model_path = str(model_dir / f"{training_data.ai_name}.pth")
-        scaler_path = str(model_dir / "scaler.pkl")
-        le_path = str(model_dir / "label_encoder.pkl")
+        
+        # Entraînement terminé
         training_status[training_id].update({
             "status": "completed",
             "end_time": datetime.now().isoformat(),
@@ -296,15 +276,18 @@ def training_worker(training_id: str, training_data: TrainingData):
             "scaler_path": scaler_path,
             "le_path": le_path
         })
-        logger.info(f"Entraînement {training_id} terminé avec succès")
+        
+        logger.info(f"Entraînement {training_id} terminé: {model_path}")
+        
     except Exception as e:
         training_status[training_id].update({
             "status": "failed",
             "end_time": datetime.now().isoformat(),
             "error_message": str(e)
         })
-        logger.error(f"Erreur dans l'entraînement {training_id}: {str(e)}")
-        import traceback; traceback.print_exc()
+        logger.error(f"Erreur training {training_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 
 # ================== ENDPOINTS D'ENTRAÎNEMENT ==================

@@ -69,14 +69,42 @@ async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None,
         names = []
         
         # Feature keys order (35 features, TempUp and TempDown removed)
-        keys_order = [
-            'OrbitalPeriod', 'OPup', 'OPdown', 'TransEpoch', 'TEup', 'TEdown',
-            'Impact', 'ImpactUp', 'ImpactDown', 'TransitDur', 'DurUp', 'DurDown',
-            'TransitDepth', 'DepthUp', 'DepthDown', 'PlanetRadius', 'RadiusUp', 'RadiusDown',
-            'EquilibriumTemp', 'InsolationFlux', 'InsolationUp', 'InsolationDown',
-            'TransitSNR', 'StellarEffTemp', 'SteffUp', 'SteffDown', 'StellarLogG', 'LogGUp', 'LogGDown',
-            'StellarRadius', 'SradUp', 'SradDown', 'RA', 'Dec', 'KeplerMag'
-        ]
+        keys_order = ['Confirmation', 
+                'OrbitalPeriod', 
+                'TransEpoch', 
+                'Dec', 
+                'RA',
+                'TransitDur', 
+                'KeplerMag', 
+                'InsolationFlux', 
+                'InsolationUp',
+                'InsolationDown', 
+                'StellarRadius', 
+                'StellarEffTemp', 
+                'TransitDepth',
+                'Impact', 
+                'TransitSNR', 
+                'EquilibriumTemp', 
+                'PlanetRadius', 
+                'RadiusUp',
+                'RadiusDown', 
+                'StellarLogG', 
+                'OPup', 
+                'OPdown', 
+                'TEup', 
+                'TEdown',
+                'DepthDown', 
+                'DepthUp', 
+                'ImpactDown', 
+                'ImpactUp', 
+                'DurUp', 
+                'DurDown',
+                'LogGUp', 
+                'LogGDown', 
+                'SradUp', 
+                'SteffUp', 
+                'SradDown', 
+                'SteffDown']
         
         # Handle "data" field (batch with named features)
         if donnees.data is not None:
