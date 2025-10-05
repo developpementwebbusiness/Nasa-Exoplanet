@@ -7,7 +7,7 @@ import io
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Union
 from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 from utils.database import KVStore
@@ -30,45 +30,34 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # ✅ CORRIGÉ: 35 features (retiré TempUp et TempDown)
-class DonneesEntree(BaseModel):
-    features: List[float] = Field(..., min_items=35, max_items=35)
-    user_id: str = Field(default="anonyme")
+from typing import Union
 
-class ExoplanetsData(BaseModel):
-    data: List[dict] = Field(..., description="Liste des dictionnaires d'exoplanètes")
+class PredictRequest(BaseModel):
+    # Support both formats: array of floats OR array of dicts OR single dict
+    features: Optional[Union[List[float], List[List[float]], List[dict]]] = None
+    data: Optional[List[dict]] = None  # For batch with named features
     user_id: str = Field(default="anonyme")
 
 class ReponseIA(BaseModel):
     data: List[dict]
 
 @app.post("/predict", response_model=ReponseIA)
-async def predire(donnees: DonneesEntree):
+async def predire(donnees: PredictRequest):
+    """
+    Unified prediction endpoint that handles both single and batch predictions.
+    
+    Supports three input formats:
+    1. Single prediction with features array: {"features": [35 floats]}
+    2. Batch prediction with features arrays: {"features": [[35 floats], [35 floats], ...]}
+    3. Batch prediction with named features: {"data": [{"name": "...", "OrbitalPeriod": ..., ...}, ...]}
+    """
     try:
-        logger.info(f"Requête de {donnees.user_id}: {len(donnees.features)} features")
-
-        rows = [donnees.features]
-        labels, confidence_scores = predict_rows(rows)
+        logger.info(f"Requête de {donnees.user_id}")
         
-        result = []
-        for i, (label, confidence) in enumerate(zip(labels, confidence_scores)):
-            result.append({
-                "name": f"Exoplanet_{i+1}",
-                "score": float(confidence),
-                "label": bool(label)
-            })
+        rows = []
+        names = []
         
-        return {"data": result}
-
-    except Exception as e:
-        logger.error(f"Erreur prédiction: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
-
-@app.post("/predict_batch", response_model=ReponseIA)
-async def predire_batch(donnees: ExoplanetsData):
-    try:
-        logger.info(f"Batch de {donnees.user_id}: {len(donnees.data)} exoplanètes")
-        
-        # ✅ CORRIGÉ: 35 clés - RETIRÉ TempUp et TempDown (qui sont None de toute façon)
+        # Feature keys order (35 features, TempUp and TempDown removed)
         keys_order = [
             'OrbitalPeriod', 'OPup', 'OPdown', 'TransEpoch', 'TEup', 'TEdown',
             'Impact', 'ImpactUp', 'ImpactDown', 'TransitDur', 'DurUp', 'DurDown',
@@ -78,43 +67,119 @@ async def predire_batch(donnees: ExoplanetsData):
             'StellarRadius', 'SradUp', 'SradDown', 'RA', 'Dec', 'KeplerMag'
         ]
         
-        logger.info(f"Conversion avec {len(keys_order)} features (sans TempUp/TempDown)")
-        
-        rows = []
-        for j, exoplanet in enumerate(donnees.data):
-            features = []
-            for key in keys_order:
-                value = exoplanet.get(key)
-                if value is None:
-                    features.append(0.0)
-                else:
-                    try:
-                        features.append(float(value))
-                    except (ValueError, TypeError):
-                        features.append(0.0)
+        # Handle "data" field (batch with named features)
+        if donnees.data is not None:
+            logger.info(f"Batch request with {len(donnees.data)} samples (named features)")
             
-            logger.info(f"Exoplanète {j+1}: {len(features)} features")
-            rows.append(features)
+            for j, exoplanet in enumerate(donnees.data):
+                features = []
+                for key in keys_order:
+                    value = exoplanet.get(key)
+                    if value is None:
+                        features.append(0.0)
+                    else:
+                        try:
+                            features.append(float(value))
+                        except (ValueError, TypeError):
+                            features.append(0.0)
+                
+                if len(features) != 35:
+                    raise HTTPException(status_code=400, detail=f"Sample {j} has {len(features)} features, expected 35")
+                
+                rows.append(features)
+                names.append(exoplanet.get("name", f"Exoplanet_{j+1}"))
         
-        # Vérification avant predict_rows
-        logger.info(f"Envoi à predict_rows: {len(rows)} lignes de {len(rows[0])} features chacune")
+        # Handle "features" field
+        elif donnees.features is not None:
+            # Check if it's a single array of floats or list of arrays
+            if len(donnees.features) > 0:
+                # Single prediction: [float, float, ...]
+                if isinstance(donnees.features[0], (int, float)):
+                    if len(donnees.features) != 35:
+                        raise HTTPException(status_code=400, detail=f"Expected 35 features, got {len(donnees.features)}")
+                    rows = [donnees.features]
+                    names = ["Exoplanet_1"]
+                    logger.info(f"Single prediction with {len(donnees.features)} features")
+                
+                # Batch prediction with arrays: [[float, ...], [float, ...]]
+                elif isinstance(donnees.features[0], list):
+                    for i, feature_row in enumerate(donnees.features):
+                        if len(feature_row) != 35:
+                            raise HTTPException(status_code=400, detail=f"Row {i} has {len(feature_row)} features, expected 35")
+                        rows.append(feature_row)
+                        names.append(f"Exoplanet_{i+1}")
+                    logger.info(f"Batch prediction with {len(rows)} samples")
+                
+                # Batch prediction with dicts: [{"OrbitalPeriod": ..., ...}, ...]
+                elif isinstance(donnees.features[0], dict):
+                    for j, exoplanet in enumerate(donnees.features):
+                        features = []
+                        for key in keys_order:
+                            value = exoplanet.get(key)
+                            if value is None:
+                                features.append(0.0)
+                            else:
+                                try:
+                                    features.append(float(value))
+                                except (ValueError, TypeError):
+                                    features.append(0.0)
+                        
+                        if len(features) != 35:
+                            raise HTTPException(status_code=400, detail=f"Sample {j} has {len(features)} features, expected 35")
+                        
+                        rows.append(features)
+                        names.append(exoplanet.get("name", f"Exoplanet_{j+1}"))
+                    logger.info(f"Batch prediction with {len(rows)} samples (dict format)")
+                else:
+                    raise HTTPException(status_code=400, detail="Invalid features format")
+            else:
+                raise HTTPException(status_code=400, detail="Empty features array")
+        else:
+            raise HTTPException(status_code=400, detail="Either 'features' or 'data' field is required")
         
+        # Make predictions
+        logger.info(f"Sending {len(rows)} samples to model")
         labels, confidence_scores = predict_rows(rows)
-        logger.info(f"Prédictions reçues - Labels: {labels}, Scores: {confidence_scores}")
+        logger.info(f"Predictions received - Labels: {labels}, Scores: {confidence_scores}")
         
+        # Format response
         result = []
-        for i, (label, confidence) in enumerate(zip(labels, confidence_scores)):
+        for i, (label, confidence, name) in enumerate(zip(labels, confidence_scores, names)):
             result.append({
-                "name": donnees.data[i].get("name", f"Exoplanet_{i+1}"),
+                "name": name,
                 "score": float(confidence),
                 "label": bool(label)
             })
         
         return {"data": result}
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Erreur batch: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erreur batch: {str(e)}")
+        logger.error(f"Erreur prédiction: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+
+@app.get("/test_prediction")
+async def test_prediction():
+    """Test endpoint with dummy data to verify the API is working"""
+    try:
+        # ✅ 35 test values
+        test_row = [0.1 + (i * 0.02) for i in range(35)]
+        
+        labels, confidence_scores = predict_rows([test_row])
+        
+        result = [{
+            "name": "Test_Exoplanet",
+            "score": float(confidence_scores[0]),
+            "label": bool(labels[0])
+        }]
+        
+        return {"data": result}
+        
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/export_model")
 async def export_model(model_id: Optional[str] = Query(None, description="Model ID to export. Use 'all' for complete package, 'STAR_AI_v2' for base model only, or specify a custom model filename")):
