@@ -269,7 +269,7 @@ if __name__ == "__main__":
         print("❌ ERROR: Could not connect to API!")
         print("   Make sure the API is running:")
         print("   > cd Python/server")
-        print("   > python api.py")
+        print("   > python app.py")
         sys.exit(1)
     
     try:

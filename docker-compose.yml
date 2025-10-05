@@ -3,12 +3,12 @@ services:
     build:
       context: .
       dockerfile: docker/website/Dockerfile
-    container_name: nextjs-website-container  
+    container_name: nextjs-website-container
     restart: always
     ports:
       - "3000:3000"
     networks:
-      - app_network  # Updated network name for consistency
+      - app_network # Updated network name for consistency
 
   flask-service:
     build:
@@ -24,25 +24,25 @@ services:
     volumes:
       - .:/app
     restart: always
-    command: ["python", "api.py"]
+    command: ["python", "app.py"]
 
   db:
     image: postgres
     restart: always
     environment:
       POSTGRES_PASSWORD: example # Use a strong password in production
-      
+
     volumes:
-      - pgdata:/var/lib/postgresql/data 
- 
+      - pgdata:/var/lib/postgresql/data
+
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
- 
+
 volumes:
   pgdata:
 networks:
-  app_network:  # Updated network name to make it tutorial-friendly
+  app_network: # Updated network name to make it tutorial-friendly
     driver: bridge

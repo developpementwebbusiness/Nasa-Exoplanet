@@ -138,6 +138,7 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
 
   const handleMappingConfirm = useCallback(
     (mapping: Record<string, string>) => {
+      console.log("[CSV-Uploader] 🟡 handleMappingConfirm called");
       if (!pendingData) return;
 
       // Apply the mapping to transform the data
@@ -158,6 +159,8 @@ export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVU
       setShowMapper(false);
       setPendingData(null);
       setIsConfirmed(true); // Mark as confirmed so the UI shows the data
+      
+      console.log("[CSV-Uploader] 🟡 Calling onUpload with", mappedData.length, "items");
       onUpload(mappedData);
     },
     [pendingData, onUpload]

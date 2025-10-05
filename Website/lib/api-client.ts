@@ -138,16 +138,18 @@ export async function predict(
   data: ExoplanetData[] | number[] | number[][],
   userId: string = "web_client"
 ): Promise<PredictionResult[]> {
+  console.log(`[API] 🔵 predict() called with ${Array.isArray(data) ? data.length : 1} items`);
+  console.trace("[API] predict() call stack:");
+  
   // Prevent multiple simultaneous predictions
   if (predictionInProgress) {
-    console.warn(
-      "[API] Prediction already in progress, ignoring duplicate call"
-    );
+    console.warn("[API] ⚠️ Prediction already in progress, ignoring duplicate call");
     throw new Error("Prediction already in progress");
   }
 
   predictionInProgress = true;
-
+  console.log("[API] 🔒 Lock acquired, prediction starting");
+  
   try {
     console.log(
       `[API] Starting prediction for ${
@@ -217,6 +219,8 @@ async function predictSingleBatch(
   data: ExoplanetData[],
   userId: string
 ): Promise<PredictionResult[]> {
+  console.log(`[API] 📤 Making API call to /predict with ${data.length} items`);
+  
   const response = await fetch(`${API_BASE_URL}/predict`, {
     method: "POST",
     headers: {
@@ -234,6 +238,7 @@ async function predictSingleBatch(
   }
 
   const result: PredictionResponse = await response.json();
+  console.log(`[API] 📥 Received ${result.data.length} predictions from API`);
   return result.data;
 }
 
