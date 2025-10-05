@@ -204,7 +204,7 @@ async def export_ia_files(
     """
 
     # Chemin source: utils/Data/{ia_folder}/
-    source_path = BASE_DIR / "utils" / "Data" / ia_folder
+    source_path = "utils" / "Data" / ia_folder
     
     if not source_path.exists():
         raise HTTPException(
