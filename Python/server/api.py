@@ -1,143 +1,117 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import sys
-import os
+import shutil
+import pathlib
+import logging
+import zipfile
+import uvicorn
+import io
 
-# Add the parent directory to the path to import utils
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from utils.STARPredict import predict_rows
+from utils.utils_json import convert, output_json
+from utils.database import KVStore
+from fastapi.responses import Response
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Configuration du logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint to verify the API is running"""
-    return jsonify({
-        'status': 'healthy',
-        'message': 'STAR AI API is running'
-    }), 200
+# Créer l'application FastAPI
+app = FastAPI(
+    title="API Modèle IA",
+    description="API pour communiquer avec un modèle d'intelligence artificielle",
+    version="1.0.0"
+)
 
-@app.route('/predict', methods=['POST'])
-def predict():
+
+# Charger la database
+db = KVStore("store.db")
+
+# Ensure uploads directory exists
+BASE_DIR = pathlib.Path(__file__).resolve().parent
+UPLOAD_DIR = BASE_DIR / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# Définir la structure des données d'entrée avec validation
+class DonneesEntree(BaseModel):
+    features: List[float] = Field(..., min_items=4, max_items=4)
+    user_id: str = Field(default="anonyme")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "features": [5.1, 3.5, 1.4, 0.2],
+                "user_id": "utilisateur_123"
+            }
+        }
+
+# Définir la structure des données de sortie
+class ReponseIA(BaseModel):
+    data : list[dict]
+
+# Endpoint principal: reçoit JSON, fait tourner l'IA, renvoie JSON
+@app.post("/predict", response_model=ReponseIA)
+async def predire(donnees: DonneesEntree):
     """
-    Predict exoplanet classification from input features.
-    
-    Expected JSON format:
-    {
-        "features": [[feature1, feature2, ..., feature37], ...]
-    }
-    
-    Or for a single row:
-    {
-        "features": [feature1, feature2, ..., feature37]
-    }
-    
-    Note: TempUp and TempDown (indices 20 and 21) will be automatically removed
-    before sending to the AI model, reducing 37 features to 35.
-    
-    Returns:
-    {
-        "predictions": [
-            {
-                "label": "CONFIRMED" or "FALSE POSITIVE" or "CANDIDATE",
-                "confidence": 0.95
-            },
-            ...
-        ]
-    }
+    Endpoint qui:
+    1. Reçoit les données JSON via l'API
+    2. Fait tourner le modèle IA
+    3. Renvoie la prédiction en JSON
     """
     try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({
-                'error': 'No JSON data provided'
-            }), 400
-        
-        if 'features' not in data:
-            return jsonify({
-                'error': 'Missing "features" key in request body'
-            }), 400
-        
-        features = data['features']
-        
-        # Handle single row input (convert to list of lists)
-        if features and not isinstance(features[0], list):
-            features = [features]
-        
-        # Validate input
-        if not features or len(features) == 0:
-            return jsonify({
-                'error': 'Empty features array'
-            }), 400
-        
-        # Check that each row has exactly 37 features (before removing TempUp and TempDown)
-        for idx, row in enumerate(features):
-            if len(row) != 37:
-                return jsonify({
-                    'error': f'Row {idx} has {len(row)} features, expected 37 (will be reduced to 35)'
-                }), 400
-        
-        # Remove TempUp (index 20) and TempDown (index 21) from each row
-        # These columns are at indices 20 and 21 (0-indexed)
-        filtered_features = []
-        for row in features:
-            filtered_row = [val for i, val in enumerate(row) if i not in [20, 21]]
-            filtered_features.append(filtered_row)
-        
-        # Verify we now have 35 features per row
-        for idx, row in enumerate(filtered_features):
-            if len(row) != 35:
-                return jsonify({
-                    'error': f'After filtering, row {idx} has {len(row)} features, expected 35'
-                }), 500
-        
-        # Make predictions with filtered features
-        labels, confidence_scores = predict_rows(filtered_features)
-        
-        # Format response
-        predictions = []
-        for label, confidence in zip(labels, confidence_scores):
-            predictions.append({
-                'label': str(label),
-                'confidence': float(confidence)
-            })
-        
-        return jsonify({
-            'predictions': predictions,
-            'count': len(predictions)
-        }), 200
-        
-    except ValueError as e:
-        return jsonify({
-            'error': f'Invalid input data: {str(e)}'
-        }), 400
+        logger.info(f"Requête reçue de {donnees.user_id}")
+
+        # 1) Convertir les features -> (rows, hash_list, name_list)
+        data = convert(donnees.features)
+        rows, hash_list, name_list = data[0], data[1], data[2]
+
+        # 2) Interroger la DB : séparer connus / inconnus
+        known_vals, unknown_hashes = db.split_with_data(hash_list)
+        print(known_vals,unknown_hashes)
+
+        if unknown_hashes:
+            # 3) Construire les lignes à prédire alignées à unknown_hashes (ordre & doublons)
+            idx_by_hash = {}
+            for i, h in enumerate(hash_list):
+                idx_by_hash.setdefault(h, []).append(i)
+
+            unknown_rows = []
+            for h in unknown_hashes:
+                i = idx_by_hash[h].pop(0)
+                unknown_rows.append(rows[i])
+
+            # 4) IA uniquement sur les inconnus
+            new_values = predict_rows(unknown_rows)  # len(new_values) == len(unknown_hashes)
+
+            # 5) Insert-only en DB (ne remplace jamais l’existant)
+            insert_map = {}
+            for h, val in zip(unknown_hashes, new_values):
+                if h not in insert_map:  # si hash répété, garder la 1re valeur prédite
+                    insert_map[h] = val
+            db.insert_new_many(insert_map)
+
+            # 6) Relecture DB pour obtenir toutes les valeurs alignées à hash_list
+            final_vals, still_unknown = db.split_with_data(hash_list)
+            if still_unknown:
+                logger.warning(f"Encore inconnus après insertion: {still_unknown}")
+            resultat_ia = final_vals
+        else:
+            # Tout était déjà en cache
+            resultat_ia = known_vals
+
+        logger.info(f"Prédiction effectuée: {resultat_ia}")
+
+        # 7) Réponse JSON finale (valeurs alignées à hash_list)
+        return {"data": output_json(data_output=resultat_ia, list_hash=hash_list, list_name=name_list)}
+
     except Exception as e:
-        return jsonify({
-            'error': f'Internal server error: {str(e)}'
-        }), 500
+        logger.error(f"Erreur lors de la prédiction: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors du traitement: {str(e)}"
+        )
 
-@app.route('/model-info', methods=['GET'])
-def model_info():
-    """Get information about the AI model"""
-    return jsonify({
-        'model_name': 'STAR_AI_v2',
-        'input_features': 37,
-        'filtered_to': 35,
-        'removed_columns': ['TempUp (index 20)', 'TempDown (index 21)'],
-        'output_classes': ['CONFIRMED', 'FALSE POSITIVE', 'CANDIDATE'],
-        'description': 'Exoplanet classification model using Multi-Layer Perceptron. TempUp and TempDown are automatically removed before prediction.'
-    }), 200
-
-if __name__ == '__main__':
-    print("🚀 Starting STAR AI API...")
-    print("📊 Model loaded and ready for predictions")
-    print("🌐 Server running on http://localhost:5000")
-    print("\nEndpoints:")
-    print("  - GET  /health      : Health check")
-    print("  - POST /predict     : Make predictions")
-    print("  - GET  /model-info  : Model information")
-    
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# Lancer le serveur
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
