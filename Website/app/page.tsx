@@ -23,7 +23,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { DataTable } from "@/components/data-table";
 import { CandidateModal } from "@/components/candidate-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { predict, csvRowToExoplanetData, checkApiHealth, type PredictionResult } from "@/lib/api-client";
+import {
+  predict,
+  csvRowToExoplanetData,
+  checkApiHealth,
+  type PredictionResult,
+} from "@/lib/api-client";
 
 interface ClassificationWithComment {
   type: "exoplanet" | "not_exoplanet" | "unsure";
@@ -65,20 +70,23 @@ export default function ExoplanetExplorer() {
     setIsProcessing(true);
 
     try {
-      console.log('[UI] Converting CSV data to API format...');
-      const exoplanetData = data.map((row, index) => csvRowToExoplanetData(row, index));
-      
-      console.log(`[UI] Sending ${exoplanetData.length} candidates for prediction...`);
-      const results = await predict(exoplanetData, 'web_user');
-      
+      console.log("[UI] Converting CSV data to API format...");
+      const exoplanetData = data.map((row, index) =>
+        csvRowToExoplanetData(row, index)
+      );
+
+      console.log(
+        `[UI] Sending ${exoplanetData.length} candidates for prediction...`
+      );
+      const results = await predict(exoplanetData, "web_user");
+
       console.log(`[UI] Received ${results.length} predictions`);
       setPredictions(results);
       setApiAvailable(true);
-      
     } catch (error) {
       console.error("[UI] Prediction error:", error);
       setApiAvailable(false);
-      
+
       // Fallback: Generate mock predictions if API fails
       const mockPredictions = data.map((row, index) => ({
         name: row.name || row.kepoi_name || `Candidate_${index + 1}`,
@@ -93,23 +101,26 @@ export default function ExoplanetExplorer() {
 
   const handleRecheck = async () => {
     if (csvData.length === 0) return;
-    
+
     setIsProcessing(true);
     try {
-      console.log('[UI] Rechecking data with AI...');
-      const exoplanetData = csvData.map((row, index) => csvRowToExoplanetData(row, index));
-      
-      console.log(`[UI] Sending ${exoplanetData.length} candidates for re-prediction...`);
-      const results = await predict(exoplanetData, 'web_user');
-      
+      console.log("[UI] Rechecking data with AI...");
+      const exoplanetData = csvData.map((row, index) =>
+        csvRowToExoplanetData(row, index)
+      );
+
+      console.log(
+        `[UI] Sending ${exoplanetData.length} candidates for re-prediction...`
+      );
+      const results = await predict(exoplanetData, "web_user");
+
       console.log(`[UI] Received ${results.length} updated predictions`);
       setPredictions(results);
       setApiAvailable(true);
-      
     } catch (error) {
       console.error("[UI] Re-prediction error:", error);
       setApiAvailable(false);
-      
+
       // Fallback: Generate mock predictions if API fails
       const mockPredictions = csvData.map((row, index) => ({
         name: row.name || row.kepoi_name || `Candidate_${index + 1}`,
@@ -146,10 +157,7 @@ export default function ExoplanetExplorer() {
     avgConfidence:
       predictions.length > 0
         ? (
-            (predictions.reduce(
-              (sum, p) => sum + (p.score || 0),
-              0
-            ) /
+            (predictions.reduce((sum, p) => sum + (p.score || 0), 0) /
               predictions.length) *
             100
           ).toFixed(1)
@@ -242,8 +250,8 @@ export default function ExoplanetExplorer() {
               </p>
             </div>
           </div>
-          <CSVUploader 
-            onUpload={handleCSVUpload} 
+          <CSVUploader
+            onUpload={handleCSVUpload}
             isProcessing={isProcessing}
             onRecheck={handleRecheck}
             hasData={csvData.length > 0}
