@@ -26,13 +26,16 @@ def predict():
     
     Expected JSON format:
     {
-        "features": [[feature1, feature2, ..., feature35], ...]
+        "features": [[feature1, feature2, ..., feature37], ...]
     }
     
     Or for a single row:
     {
-        "features": [feature1, feature2, ..., feature35]
+        "features": [feature1, feature2, ..., feature37]
     }
+    
+    Note: TempUp and TempDown (indices 20 and 21) will be automatically removed
+    before sending to the AI model, reducing 37 features to 35.
     
     Returns:
     {
@@ -70,15 +73,29 @@ def predict():
                 'error': 'Empty features array'
             }), 400
         
-        # Check that each row has exactly 35 features
+        # Check that each row has exactly 37 features (before removing TempUp and TempDown)
         for idx, row in enumerate(features):
-            if len(row) != 35:
+            if len(row) != 37:
                 return jsonify({
-                    'error': f'Row {idx} has {len(row)} features, expected 35'
+                    'error': f'Row {idx} has {len(row)} features, expected 37 (will be reduced to 35)'
                 }), 400
         
-        # Make predictions
-        labels, confidence_scores = predict_rows(features)
+        # Remove TempUp (index 20) and TempDown (index 21) from each row
+        # These columns are at indices 20 and 21 (0-indexed)
+        filtered_features = []
+        for row in features:
+            filtered_row = [val for i, val in enumerate(row) if i not in [20, 21]]
+            filtered_features.append(filtered_row)
+        
+        # Verify we now have 35 features per row
+        for idx, row in enumerate(filtered_features):
+            if len(row) != 35:
+                return jsonify({
+                    'error': f'After filtering, row {idx} has {len(row)} features, expected 35'
+                }), 500
+        
+        # Make predictions with filtered features
+        labels, confidence_scores = predict_rows(filtered_features)
         
         # Format response
         predictions = []
@@ -107,9 +124,11 @@ def model_info():
     """Get information about the AI model"""
     return jsonify({
         'model_name': 'STAR_AI_v2',
-        'input_features': 35,
+        'input_features': 37,
+        'filtered_to': 35,
+        'removed_columns': ['TempUp (index 20)', 'TempDown (index 21)'],
         'output_classes': ['CONFIRMED', 'FALSE POSITIVE', 'CANDIDATE'],
-        'description': 'Exoplanet classification model using Multi-Layer Perceptron'
+        'description': 'Exoplanet classification model using Multi-Layer Perceptron. TempUp and TempDown are automatically removed before prediction.'
     }), 200
 
 if __name__ == '__main__':
