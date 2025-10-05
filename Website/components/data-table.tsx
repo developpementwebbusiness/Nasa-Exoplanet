@@ -1,107 +1,208 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { motion } from "framer-motion"
-import { Search, ChevronDown, ChevronUp, Eye, ChevronLeft, ChevronRight } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useState, useMemo, useCallback } from "react";
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ClassificationWithComment {
-  type: "exoplanet" | "not_exoplanet" | "unsure"
-  comment?: string
+  type: "exoplanet" | "not_exoplanet" | "unsure";
+  comment?: string;
 }
 
 interface DataTableProps {
-  data: any[]
-  predictions: any[]
-  classifications: Record<number, ClassificationWithComment>
-  onSelectCandidate: (index: number) => void
+  data: any[];
+  predictions: any[];
+  classifications: Record<number, ClassificationWithComment>;
+  onSelectCandidate: (index: number) => void;
+  selectedCandidate: number | null;
 }
 
-const ITEMS_PER_PAGE = 50
+const ITEMS_PER_PAGE = 50;
+const MISSING_DATA_THRESHOLD = 0.7; // Hide columns with more than 70% missing data
 
-export function DataTable({ data, predictions, classifications, onSelectCandidate }: DataTableProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState<string>("all")
-  const [sortColumn, setSortColumn] = useState<string | null>(null)
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [currentPage, setCurrentPage] = useState(1)
+export function DataTable({
+  data,
+  predictions,
+  classifications,
+  onSelectCandidate,
+  selectedCandidate,
+}: DataTableProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE);
+  const [customInput, setCustomInput] = useState(String(ITEMS_PER_PAGE));
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   const columns = useMemo(() => {
-    if (data.length === 0) return []
-    return Object.keys(data[0]).slice(0, 8)
-  }, [data])
+    if (data.length === 0) return [];
+
+    const allKeys = Object.keys(data[0]);
+
+    // Calculate missing data percentage for each column
+    const columnStats = allKeys.map((key) => {
+      const missingCount = data.filter((row) => {
+        const value = row[key];
+        return value === null || value === undefined || value === "";
+      }).length;
+
+      const missingPercentage = missingCount / data.length;
+
+      return {
+        key,
+        missingPercentage,
+        hasData: missingCount < data.length,
+      };
+    });
+
+    // Only keep columns that have data and are below the missing threshold
+    return columnStats
+      .filter(
+        (stat) =>
+          stat.hasData && stat.missingPercentage < MISSING_DATA_THRESHOLD
+      )
+      .map((stat) => stat.key);
+  }, [data]);
 
   const filteredData = useMemo(() => {
     let filtered = data.map((row, index) => ({
       ...row,
       _index: index,
-      _probability: predictions[index]?.probability || 0,
+      _confidence:
+        predictions[index]?.confidence || predictions[index]?.probability || 0,
       _classification: classifications[index]?.type || "unclassified",
-    }))
+    }));
 
     if (searchTerm) {
       filtered = filtered.filter((row) =>
-        Object.values(row).some((val) => String(val).toLowerCase().includes(searchTerm.toLowerCase())),
-      )
+        Object.values(row).some((val) =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
     }
 
     if (filterType !== "all") {
-      filtered = filtered.filter((row) => row._classification === filterType)
+      filtered = filtered.filter((row) => row._classification === filterType);
     }
 
     if (sortColumn) {
       filtered.sort((a, b) => {
-        const aVal = a[sortColumn]
-        const bVal = b[sortColumn]
+        const aVal = a[sortColumn];
+        const bVal = b[sortColumn];
         if (typeof aVal === "number" && typeof bVal === "number") {
-          return sortDirection === "asc" ? aVal - bVal : bVal - aVal
+          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
         }
         return sortDirection === "asc"
           ? String(aVal).localeCompare(String(bVal))
-          : String(bVal).localeCompare(String(aVal))
-      })
+          : String(bVal).localeCompare(String(aVal));
+      });
     }
 
-    return filtered
-  }, [data, predictions, classifications, searchTerm, filterType, sortColumn, sortDirection])
+    return filtered;
+  }, [
+    data,
+    predictions,
+    classifications,
+    searchTerm,
+    filterType,
+    sortColumn,
+    sortDirection,
+  ]);
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredData.slice(start, start + ITEMS_PER_PAGE)
-  }, [filteredData, currentPage])
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortColumn(column)
-      setSortDirection("asc")
+      setSortColumn(column);
+      setSortDirection("asc");
     }
-    setCurrentPage(1)
-  }
+    setCurrentPage(1);
+  };
+
+  const handleCustomInputChange = useCallback(
+    (value: string) => {
+      setCustomInput(value);
+
+      // Clear existing timeout
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+
+      // Set new timeout - wait 500ms after user stops typing
+      const timeout = setTimeout(() => {
+        const numValue = parseInt(value);
+        if (value && numValue > 0 && numValue <= filteredData.length) {
+          setItemsPerPage(numValue);
+          setCurrentPage(1);
+        } else if (!value) {
+          setItemsPerPage(ITEMS_PER_PAGE);
+          setCustomInput(String(ITEMS_PER_PAGE));
+          setCurrentPage(1);
+        }
+      }, 500);
+
+      setDebounceTimeout(timeout);
+    },
+    [debounceTimeout, filteredData.length]
+  );
+
+  const handlePresetClick = (size: number) => {
+    setItemsPerPage(size);
+    setCustomInput(String(size));
+    setCurrentPage(1);
+  };
 
   const getClassificationBadge = (classification: string) => {
     switch (classification) {
       case "exoplanet":
-        return <Badge className="bg-chart-4 text-white border-0">Exoplanet</Badge>
+        return (
+          <Badge className="bg-chart-4 text-white border-0">Exoplanet</Badge>
+        );
       case "not_exoplanet":
-        return <Badge className="bg-chart-2 text-white border-0">Not Exoplanet</Badge>
+        return (
+          <Badge className="bg-chart-2 text-white border-0">
+            Not Exoplanet
+          </Badge>
+        );
       case "unsure":
-        return <Badge className="bg-chart-5 text-white border-0">Unsure</Badge>
+        return <Badge className="bg-chart-5 text-white border-0">Unsure</Badge>;
       default:
         return (
-          <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
+          <Badge
+            variant="outline"
+            className="border-muted-foreground/30 text-muted-foreground"
+          >
             Unclassified
           </Badge>
-        )
+        );
     }
-  }
+  };
 
   return (
     <Card className="p-6 bg-card border-2 border-primary/30 shadow-lg">
@@ -112,8 +213,8 @@ export function DataTable({ data, predictions, classifications, onSelectCandidat
             placeholder="Search candidates..."
             value={searchTerm}
             onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setCurrentPage(1)
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
             }}
             className="pl-10 border-2 border-primary/20 focus:border-primary bg-background text-foreground"
           />
@@ -121,8 +222,8 @@ export function DataTable({ data, predictions, classifications, onSelectCandidat
         <Select
           value={filterType}
           onValueChange={(v) => {
-            setFilterType(v)
-            setCurrentPage(1)
+            setFilterType(v);
+            setCurrentPage(1);
           }}
         >
           <SelectTrigger className="w-full md:w-[200px] border-2 border-primary/20 bg-background text-foreground">
@@ -139,7 +240,8 @@ export function DataTable({ data, predictions, classifications, onSelectCandidat
       </div>
 
       <div className="overflow-x-auto rounded-lg border-2 border-primary/20">
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="h-[500px] overflow-y-auto">
+          {/* Fixed height for consistent size */}
           <table className="w-full">
             <thead className="sticky top-0 bg-primary text-primary-foreground z-10 shadow-md">
               <tr>
@@ -161,75 +263,145 @@ export function DataTable({ data, predictions, classifications, onSelectCandidat
                     </div>
                   </th>
                 ))}
-                <th className="text-left p-3 text-sm font-semibold">Probability</th>
-                <th className="text-left p-3 text-sm font-semibold">Classification</th>
-                <th className="text-left p-3 text-sm font-semibold">Actions</th>
+                <th className="text-left p-3 text-sm font-semibold">
+                  Confidence
+                </th>
+                <th className="text-left p-3 text-sm font-semibold">
+                  Classification
+                </th>
               </tr>
             </thead>
             <tbody className="bg-card">
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 4} className="text-center p-8 text-muted-foreground">
+                  <td
+                    colSpan={columns.length + 3}
+                    className="text-center p-8 text-muted-foreground"
+                  >
                     No candidates found
                   </td>
                 </tr>
               ) : (
-                <TooltipProvider>
-                  {paginatedData.map((row, idx) => (
-                    <motion.tr
+                <>
+                  {paginatedData.map((row) => (
+                    <tr
                       key={row._index}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: idx * 0.01 }}
-                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                      onClick={() => onSelectCandidate(row._index)}
+                      className={`border-b border-border hover:bg-primary/10 transition-colors cursor-pointer ${
+                        selectedCandidate === row._index
+                          ? "bg-primary/10 border-primary/30"
+                          : ""
+                      }`}
                     >
-                      <td className="p-3 text-sm text-muted-foreground font-semibold">{row._index + 1}</td>
-                      {columns.map((col) => (
-                        <Tooltip key={col}>
-                          <TooltipTrigger asChild>
-                            <td className="p-3 text-sm text-foreground font-mono cursor-help">
-                              {typeof row[col] === "number" ? row[col].toFixed(4) : String(row[col])}
+                      <td className="p-3 text-sm text-muted-foreground font-semibold">
+                        {row._index + 1}
+                      </td>
+                      {columns.map((col) => {
+                        const value = row[col];
+                        // Skip rendering null/undefined/empty values
+                        if (
+                          value === null ||
+                          value === undefined ||
+                          value === ""
+                        ) {
+                          return (
+                            <td
+                              key={col}
+                              className="p-3 text-sm text-muted-foreground"
+                            >
+                              N/A
                             </td>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-primary text-primary-foreground border-primary/50">
-                            <p className="font-semibold">{col}</p>
-                            <p className="text-xs opacity-90">
-                              Value: {typeof row[col] === "number" ? row[col].toFixed(6) : String(row[col])}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
+                          );
+                        }
+
+                        return (
+                          <td
+                            key={col}
+                            className="p-3 text-sm text-foreground font-mono max-w-xs truncate"
+                            title={
+                              typeof value === "number"
+                                ? value.toFixed(6)
+                                : String(value)
+                            }
+                          >
+                            {typeof value === "number"
+                              ? value.toFixed(4)
+                              : String(value).substring(0, 50) +
+                                (String(value).length > 50 ? "..." : "")}
+                          </td>
+                        );
+                      })}
                       <td className="p-3 text-sm">
-                        <Badge variant="outline" className="font-mono border-primary/30 text-foreground">
-                          {(row._probability * 100).toFixed(1)}%
+                        <Badge
+                          variant="outline"
+                          className="font-mono border-primary/30 text-foreground bg-muted"
+                        >
+                          {(row._confidence * 100).toFixed(1)}%
                         </Badge>
                       </td>
-                      <td className="p-3 text-sm">{getClassificationBadge(row._classification)}</td>
-                      <td className="p-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onSelectCandidate(row._index)}
-                          className="hover:bg-primary/10 hover:text-primary"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                      <td className="p-3 text-sm">
+                        {getClassificationBadge(row._classification)}
                       </td>
-                    </motion.tr>
+                    </tr>
                   ))}
-                </TooltipProvider>
+                </>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing {paginatedData.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0} to{" "}
-          {Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} of {filteredData.length} candidates
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Items per page selector */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className="text-sm text-muted-foreground">Show:</span>
+          <div className="flex gap-2">
+            {[50, 100, 200, 500].map((size) => (
+              <Button
+                key={size}
+                variant={itemsPerPage === size ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePresetClick(size)}
+                className={
+                  itemsPerPage === size
+                    ? "bg-primary text-primary-foreground"
+                    : "border-primary/20"
+                }
+              >
+                {size}
+              </Button>
+            ))}
+            <Input
+              type="text"
+              placeholder="Custom"
+              value={customInput}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9]/g, ""); // Only allow numbers
+                handleCustomInputChange(value);
+              }}
+              onBlur={(e) => {
+                // Reset to current itemsPerPage if invalid on blur
+                if (!e.target.value || parseInt(e.target.value) < 1) {
+                  setCustomInput(String(itemsPerPage));
+                }
+              }}
+              className="w-24 h-8 text-center border-2 border-primary/20 focus:border-primary"
+            />
+          </div>
+          <span className="text-sm text-muted-foreground">per page</span>
         </div>
+
+        {/* Pagination controls */}
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="border-primary/30"
+          >
+            First
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -239,7 +411,7 @@ export function DataTable({ data, predictions, classifications, onSelectCandidat
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-foreground font-medium">
+          <span className="text-sm text-foreground font-medium px-2">
             Page {currentPage} of {totalPages}
           </span>
           <Button
@@ -251,8 +423,17 @@ export function DataTable({ data, predictions, classifications, onSelectCandidat
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="border-primary/30"
+          >
+            Last
+          </Button>
         </div>
       </div>
     </Card>
-  )
+  );
 }

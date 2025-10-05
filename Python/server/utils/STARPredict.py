@@ -40,7 +40,7 @@ model = SimpleMLP(
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
+model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
 model.eval()  # important for evaluation
 
 def predict_rows(rows):
@@ -49,7 +49,7 @@ def predict_rows(rows):
     rows: list of lists, each inner list = one sample with 8 features
     returns: list of predicted labels and conf_score
     """
-
+    
     X_nu = np.array(rows, dtype=np.float32)
     X_scaled = scaler.transform(X_nu)
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32)

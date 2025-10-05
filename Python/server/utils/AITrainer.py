@@ -17,7 +17,7 @@ from rich import print
 
 
 #columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
-columnKepler = [
+StandardizedColumnNames = [
     'Confirmation',       # koi_disposition
     'OrbitalPeriod',      # koi_period
     'OPup',               # koi_period_err1
@@ -62,46 +62,20 @@ columnKepler = [
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
-
-df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
-df.columns = columnKepler
-
-dfy = df.iloc[:,0]
-dffeat = df.iloc[:,1:]
-dffeatclean = cl.clean_array(dffeat)
-
-#print('dfy',dfy)
-#print('dffeat',dffeat)
-#print('dffeatclean',dffeatclean)
-
-print(type(dffeat))
-print(type(dfy),type(dffeatclean))
-
-df = pd.concat([dfy,dffeatclean],axis=1)
-
-print(type(df))
-
-binary_replace = {'CANDIDATE':'True', 
-                  'FALSE POSITIVE': 'False', 
-                  'NOT DISPOSITIONED': 'False', 
-                  'CONFIRMED': 'True',
-                  'REFUTED': 'False',
-                  'APC': 'False',
-                  'CP': 'True',
-                  'FP': 'False',
-                  'FA': 'False',
-                  'KP': 'True',
-                  'PC': 'True'}
-
-df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+def cleaning(filepath):
+    df = pd.DataFrame(data)
+    f.columns = columnKepler
+    dfy = df.iloc[:,0]
+    dffeat = df.iloc[:,1:]
+    dffeatclean = cl.clean_array(dffeat)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
 
-newcols = df.columns
+def setup(df,columnnames)
+    features = columnnames[1:]  # replace with your numeric columns that you want to keep
+    label_col = columnnames[0]                  # replace with your target column that you want your model to predict
 
-features = newcols[1:]  # replace with your numeric columns that you want to keep
-label_col = newcols[0]                  # replace with your target column that you want your model to predict
 
 
 # numeric features -> StandardScaler

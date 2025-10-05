@@ -12,97 +12,28 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-import cleaning_library as cl
 from rich import print
 
 
-#columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
-columnKepler = [
-    'Confirmation',       # koi_disposition
-    'OrbitalPeriod',      # koi_period
-    'OPup',               # koi_period_err1
-    'OPdown',             # koi_period_err2
-    'TransEpoch',         # koi_time0bk
-    'TEup',               # koi_time0bk_err1
-    'TEdown',             # koi_time0bk_err2
-    'Impact',             # koi_impact
-    'ImpactUp',           # koi_impact_err1
-    'ImpactDown',         # koi_impact_err2
-    'TransitDur',         # koi_duration
-    'DurUp',              # koi_duration_err1
-    'DurDown',            # koi_duration_err2
-    'TransitDepth',       # koi_depth
-    'DepthUp',            # koi_depth_err1
-    'DepthDown',          # koi_depth_err2
-    'PlanetRadius',       # koi_prad
-    'RadiusUp',           # koi_prad_err1
-    'RadiusDown',         # koi_prad_err2
-    'EquilibriumTemp',    # koi_teq
-    'TempUp',             # koi_teq_err1
-    'TempDown',           # koi_teq_err2
-    'InsolationFlux',     # koi_insol
-    'InsolationUp',       # koi_insol_err1
-    'InsolationDown',     # koi_insol_err2
-    'TransitSNR',         # koi_model_snr
-    'StellarEffTemp',     # koi_steff
-    'SteffUp',            # koi_steff_err1
-    'SteffDown',          # koi_steff_err2
-    'StellarLogG',        # koi_slogg
-    'LogGUp',             # koi_slogg_err1
-    'LogGDown',           # koi_slogg_err2
-    'StellarRadius',      # koi_srad
-    'SradUp',             # koi_srad_err1
-    'SradDown',           # koi_srad_err2
-    'RA',                 # ra
-    'Dec',                # dec
-    'KeplerMag'           # koi_kepmag
-]
-
-
+columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
-df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
-df.columns = columnKepler
-
-dfy = df.iloc[:,0]
-dffeat = df.iloc[:,1:]
-dffeatclean = cl.clean_array(dffeat)
-
-#print('dfy',dfy)
-#print('dffeat',dffeat)
-#print('dffeatclean',dffeatclean)
-
-print(type(dffeat))
-print(type(dfy),type(dffeatclean))
-
-df = pd.concat([dfy,dffeatclean],axis=1)
-
-print(type(df))
-
-binary_replace = {'CANDIDATE':'True', 
-                  'FALSE POSITIVE': 'False', 
-                  'NOT DISPOSITIONED': 'False', 
-                  'CONFIRMED': 'True',
-                  'REFUTED': 'False',
-                  'APC': 'False',
-                  'CP': 'True',
-                  'FP': 'False',
-                  'FA': 'False',
-                  'KP': 'True',
-                  'PC': 'True'}
-
-df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
+df = pd.read_csv('Python/server/utils/Data/ExoHarmonious')
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
 
-newcols = df.columns
 
-features = newcols[1:]  # replace with your numeric columns that you want to keep
-label_col = newcols[0]                  # replace with your target column that you want your model to predict
+features = columnnames[1:]  # replace with your numeric columns that you want to keep
+label_col = columnnames[0]                  # replace with your target column that you want your model to predict
 
+'''
+imputer = IterativeImputer()
+df[features] = imputer.fit_transform(df[features])
+'''
+df = df[columnnames].dropna()
 
 # numeric features -> StandardScaler
 scaler = StandardScaler()
