@@ -76,59 +76,10 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 
 ---
 
-## Usage Example
+## Custom AI training
 
-### Training
-
-```python
-from AITrainer import cleaning, setup, definemodel, weights, training
-
-# Load and clean data
-df = cleaning(data)  
-loaders, scaler, le, X, Y = setup(df)
-
-# Define the model
-model = definemodel(X, hiddenlayers=[128,64])
-
-# Compute loss function and optimizer
-criterion, optimizer = weights(Y, model)
-
-# Train the model
-classification_report = training(
-    epochs=50,
-    model=model,
-    train_loader=loaders['train'],
-    val_loader=loaders['validation'],
-    test_loader=loaders['test'],
-    AIname='STAR_AI_v2',
-    device=torch.device('cpu'),
-    le=le,
-    optimizer=optimizer,
-    criterion=criterion
-)
-
-print(classification_report)
-```
-
-### Predictions
-
-```python
-from STARPredict import predict_rows
-
-# Example input: list of 35-feature rows
-rows = [
-    [value1, value2, ..., value35],
-    [value1, value2, ..., value35]
-]
-
-labels, confidence_scores = predict_rows(rows)
-
-print(labels)
-print(confidence_scores)
-```
-
-- `labels`: Predicted class (True/False)  
-- `confidence_scores`: Probability/confidence of each prediction
+Within the AITrainer file you'll find a multitude of functions, with the last two ones being the most important (AITRAIN,AIPredict).
+These functions are responsible for handling the user's data and desired training parameters as well has their scaler, encoder and AI file.
 
 ---
 
