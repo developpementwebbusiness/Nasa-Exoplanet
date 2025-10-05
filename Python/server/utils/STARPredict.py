@@ -35,8 +35,8 @@ class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
         return self.net(x)
 
 model = SimpleMLP(
-    input_dim=8, #number of features in input data
-    hidden=[1028,512,256,128,64],  #size of hidden layers, can be changed
+    input_dim=10, #number of features in input data
+    hidden=[128,64],  #size of hidden layers, can be changed
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
@@ -62,3 +62,8 @@ def predict_rows(rows):
         prob_scores = probs.max(dim=1).values.numpy()
 
     return labels,prob_scores
+
+rows = [[234,432,-394,143,231,47,643,712,-23,926],
+        [769,432,-34,535,231,-43,643,798,23,726]]
+
+predict_rows(rows)

@@ -1,5 +1,5 @@
 # Use a smaller, official Python base image
-FROM python:3.11-slim
+FROM python:3.11.9-slim
 
 WORKDIR /Python ./
 

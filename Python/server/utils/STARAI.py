@@ -22,7 +22,6 @@ os.chdir('C:/Coding/PythonScripts/Data')
 
 columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
 
-#filepath = 'ExoPlanetHarmony.csv' #ex: KOI/TOI/K2 cumulative table data csv file path
 
 #This code can be used to concactenate more databases
 #'''
@@ -220,14 +219,14 @@ for epoch in range(1, 201):   # 30 epochs example
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         # Save the model's weights to disk
-        torch.save(model.state_dict(), "STAR_AI.pth")   # checkpoint
+        torch.save(model.state_dict(), "STAR_AI_v2.pth")   # checkpoint
     
     # --- Print progress for this epoch ---
     print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
 
 
 # This ensures we use the model that performed best on validation data
-model.load_state_dict(torch.load("STAR_AI.pth", map_location=DEVICE))
+model.load_state_dict(torch.load("STAR_AI_v2.pth", map_location=DEVICE))
 
 model.eval()  #same idea as the other times we called our Datakoaders
 preds, trues = [], []
