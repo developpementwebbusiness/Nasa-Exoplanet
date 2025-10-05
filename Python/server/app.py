@@ -69,7 +69,7 @@ async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None,
         names = []
         
         # Feature keys order (35 features, TempUp and TempDown removed)
-        keys_order = ['Confirmation', 
+        keys_order = [
                 'OrbitalPeriod', 
                 'TransEpoch', 
                 'Dec', 
