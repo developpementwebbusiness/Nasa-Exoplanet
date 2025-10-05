@@ -241,6 +241,8 @@ def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimize
     classif = classification_report(trues, preds, labels=labels, target_names=target_names)
     return classif
 
+
+
 #Function order:
 '''
 df = cleaning(data) en liste
