@@ -112,7 +112,8 @@ async def predire(donnees: PredictRequest):
         rows = []
         names = []
         
-        # Feature keys order (35 features, TempUp and TempDown removed)
+        # Feature keys order (35 features, TempUp and TempDown REMOVED)
+        # These are the ONLY features the AI model accepts
         keys_order = [
             'OrbitalPeriod', 'OPup', 'OPdown', 'TransEpoch', 'TEup', 'TEdown',
             'Impact', 'ImpactUp', 'ImpactDown', 'TransitDur', 'DurUp', 'DurDown',
@@ -121,6 +122,9 @@ async def predire(donnees: PredictRequest):
             'TransitSNR', 'StellarEffTemp', 'SteffUp', 'SteffDown', 'StellarLogG', 'LogGUp', 'LogGDown',
             'StellarRadius', 'SradUp', 'SradDown', 'RA', 'Dec', 'KeplerMag'
         ]
+        
+        # NOTE: TempUp and TempDown are IGNORED even if sent by the client
+        # This ensures compatibility with 35-feature AI model
         
         # Handle "data" field (batch with named features)
         if donnees.data is not None:
@@ -138,11 +142,19 @@ async def predire(donnees: PredictRequest):
                         except (ValueError, TypeError):
                             features.append(0.0)
                 
+                # Verify we have exactly 35 features (should always be true with keys_order)
                 if len(features) != 35:
-                    raise HTTPException(status_code=400, detail=f"Sample {j} has {len(features)} features, expected 35")
+                    logger.error(f"Sample {j}: Expected 35 features, got {len(features)}")
+                    logger.error(f"Keys processed: {len(keys_order)}, Features collected: {len(features)}")
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Sample {j} has {len(features)} features, expected 35. This is an internal error."
+                    )
                 
                 rows.append(features)
                 names.append(exoplanet.get("name", f"Exoplanet_{j+1}"))
+            
+            logger.info(f"Successfully processed {len(rows)} samples with 35 features each")
         
         # Handle "features" field
         elif donnees.features is not None:

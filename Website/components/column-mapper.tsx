@@ -32,11 +32,6 @@ interface ColumnMapperProps {
 
 const REQUIRED_COLUMNS = [
   {
-    key: "Confirmation",
-    original: "koi_disposition",
-    description: "Confirmation status of the candidate",
-  },
-  {
     key: "OrbitalPeriod",
     original: "koi_period",
     description: "Orbital period in days",
@@ -122,16 +117,6 @@ const REQUIRED_COLUMNS = [
     key: "EquilibriumTemp",
     original: "koi_teq",
     description: "Equilibrium temperature in Kelvin",
-  },
-  {
-    key: "TempUp",
-    original: "koi_teq_err1",
-    description: "Equilibrium temp upper uncertainty",
-  },
-  {
-    key: "TempDown",
-    original: "koi_teq_err2",
-    description: "Equilibrium temp lower uncertainty",
   },
   {
     key: "InsolationFlux",
@@ -231,7 +216,6 @@ export function ColumnMapper({
       string,
       [string | null, string | null, string | null]
     > = {
-      Confirmation: ["tfopwg_disp", "disposition", "koi_disposition"],
       OrbitalPeriod: ["pl_orbper", "pl_orbper", "koi_period"],
       OPup: ["pl_orbpererr1", "pl_orbpererr1", "koi_period_err1"],
       OPdown: ["pl_orbpererr2", "pl_orbpererr2", "koi_period_err2"],
@@ -251,8 +235,6 @@ export function ColumnMapper({
       RadiusUp: ["pl_radeerr1", "pl_radeerr1", "koi_prad_err1"],
       RadiusDown: ["pl_radeerr2", "pl_radeerr2", "koi_prad_err2"],
       EquilibriumTemp: ["pl_eqt", "pl_eqt", "koi_teq"],
-      TempUp: ["pl_eqterr1", "pl_eqterr1", "koi_teq_err1"],
-      TempDown: ["pl_eqterr2", "pl_eqterr2", "koi_teq_err2"],
       InsolationFlux: ["pl_insol", "pl_insol", "koi_insol"],
       InsolationUp: ["pl_insolerr1", "pl_insolerr1", "koi_insol_err1"],
       InsolationDown: ["pl_insolerr2", "pl_insolerr2", "koi_insol_err2"],
@@ -447,12 +429,6 @@ export function ColumnMapper({
             KeplerMag: ["kepmag", "koi_kepmag", "magnitude"],
             RA: ["right_ascension", "rightascension"],
             Dec: ["declination"],
-            Confirmation: [
-              "disposition",
-              "koi_disposition",
-              "status",
-              "confirmed",
-            ],
             TransEpoch: ["epoch", "time0", "koi_time0bk", "transit_time"],
           };
 
