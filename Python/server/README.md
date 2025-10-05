@@ -35,6 +35,7 @@ The API will be available at `http://localhost:8000`
 ### Interactive Documentation
 
 Once the server is running, visit:
+
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
 
@@ -93,6 +94,7 @@ Unified prediction endpoint that handles both single and batch predictions.
 ```
 
 **Feature List (35 features, in order):**
+
 ```
 OrbitalPeriod, OPup, OPdown, TransEpoch, TEup, TEdown,
 Impact, ImpactUp, ImpactDown, TransitDur, DurUp, DurDown,
@@ -112,7 +114,7 @@ StellarRadius, SradUp, SradDown, RA, Dec, KeplerMag
 {
   "data": [
     {
-      "name": "Exoplanet_1",  // or custom name if provided
+      "name": "Exoplanet_1", // or custom name if provided
       "score": 0.9523456789,
       "label": true
     },
@@ -126,6 +128,7 @@ StellarRadius, SradUp, SradDown, RA, Dec, KeplerMag
 ```
 
 **Fields:**
+
 - `features` or `data`: Input data (choose one format)
 - `user_id`: Optional string to identify the user making the request
 - `score`: Confidence score from the AI model (0.0 to 1.0)
@@ -182,7 +185,7 @@ curl http://localhost:8000/test_prediction
   "data": [
     {
       "name": "Test_Exoplanet",
-      "score": 0.8234567890,
+      "score": 0.823456789,
       "label": true
     }
   ]
@@ -196,6 +199,7 @@ curl http://localhost:8000/test_prediction
 Export AI model files as a ZIP archive. Supports downloading the base model, custom models, or everything.
 
 **Query Parameters:**
+
 - `model_id` (optional): Specifies which model to export
   - `all` (default): Export base model + all custom models
   - `STAR_AI_v2`: Export only the base STAR AI model
@@ -215,12 +219,14 @@ curl -O "http://localhost:8000/export_model?model_id=custom_model.pth"
 ```
 
 **Response:**
+
 - Content-Type: `application/zip`
 - Downloads a ZIP file containing:
   - **Base Model** (`STAR_AI_v2/`): `STAR_AI_v2.pth`, `scaler.pkl`, `label_encoder.pkl`
   - **Custom Models** (`custom_models/`): Any uploaded custom model files
 
 **ZIP Structure:**
+
 ```
 STAR_AI_v2_complete.zip
 ├── STAR_AI_v2/
@@ -267,6 +273,7 @@ When using `/predict` endpoint, features must be in this exact order:
 ### Common Error Responses
 
 **400 Bad Request:**
+
 ```json
 {
   "detail": "Row 0 has 30 features, expected 35"
@@ -274,6 +281,7 @@ When using `/predict` endpoint, features must be in this exact order:
 ```
 
 **404 Not Found:**
+
 ```json
 {
   "detail": "Custom model 'nonexistent.pth' not found"
@@ -281,6 +289,7 @@ When using `/predict` endpoint, features must be in this exact order:
 ```
 
 **500 Internal Server Error:**
+
 ```json
 {
   "detail": "Error: [error message]"
@@ -356,59 +365,59 @@ results = predict_batch_named(exoplanets)
 ```javascript
 // Single prediction
 async function predictSingle(features) {
-  const response = await fetch('http://localhost:8000/predict', {
-    method: 'POST',
+  const response = await fetch("http://localhost:8000/predict", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       features: features,
-      user_id: 'js_client'
-    })
+      user_id: "js_client",
+    }),
   });
   return await response.json();
 }
 
 // Batch prediction with arrays
 async function predictBatchArrays(featuresList) {
-  const response = await fetch('http://localhost:8000/predict', {
-    method: 'POST',
+  const response = await fetch("http://localhost:8000/predict", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       features: featuresList,
-      user_id: 'js_client'
-    })
+      user_id: "js_client",
+    }),
   });
   return await response.json();
 }
 
 // Batch prediction with named features
 async function predictBatchNamed(exoplanets) {
-  const response = await fetch('http://localhost:8000/predict', {
-    method: 'POST',
+  const response = await fetch("http://localhost:8000/predict", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       data: exoplanets,
-      user_id: 'js_client'
-    })
+      user_id: "js_client",
+    }),
   });
   return await response.json();
 }
 
 // Example usage - Single
-const features = [2.7, 0.0, 0.0, 170.7, /* ... 35 values */];
+const features = [2.7, 0.0, 0.0, 170.7 /* ... 35 values */];
 const result = await predictSingle(features);
-console.log('Prediction:', result.data[0].label);
-console.log('Confidence:', (result.data[0].score * 100).toFixed(2) + '%');
+console.log("Prediction:", result.data[0].label);
+console.log("Confidence:", (result.data[0].score * 100).toFixed(2) + "%");
 
 // Example usage - Batch
 const exoplanets = [
-  {name: "KOI-123", OrbitalPeriod: 2.7, OPup: 0.0, /* ... */},
-  {name: "KOI-456", OrbitalPeriod: 5.4, OPup: 0.0, /* ... */}
+  { name: "KOI-123", OrbitalPeriod: 2.7, OPup: 0.0 /* ... */ },
+  { name: "KOI-456", OrbitalPeriod: 5.4, OPup: 0.0 /* ... */ },
 ];
 const results = await predictBatchNamed(exoplanets);
 ```
@@ -467,6 +476,7 @@ CORS is enabled for all origins by default. This can be configured in the API co
 ## Support
 
 For issues or questions:
+
 - Check the interactive docs at `/docs`
 - Review the logs in the terminal where the API is running
 - Ensure you have exactly 35 features per sample
