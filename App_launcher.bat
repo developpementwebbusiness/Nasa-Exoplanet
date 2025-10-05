@@ -1,2 +1,2 @@
-docker compose up --build
 start "" http://localhost:3000/
+docker compose up --build
