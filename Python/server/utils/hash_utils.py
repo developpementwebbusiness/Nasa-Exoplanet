@@ -1,58 +1,61 @@
-import bcrypt
+import hashlib
 
-def hash_password(password: str) -> bytes:
+def calculate_hash(data: str, algorithm: str = 'sha256') -> str:
     """
-    Hash a password using bcrypt
+    Calcule un hash déterministe d'une chaîne de caractères
     
     Args:
-        password (str): The plain text password
+        data (str): La donnée à hasher
+        algorithm (str): L'algorithme de hash à utiliser ('sha256', 'sha512', 'md5', etc.)
         
     Returns:
-        bytes: The hashed password
+        str: Le hash hexadécimal
     """
-    # Convert the password to bytes
-    password_bytes = password.encode('utf-8')
+    # Convertir la chaîne en bytes
+    data_bytes = data.encode('utf-8')
     
-    # Generate a salt and hash the password
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
+    # Créer l'objet hash avec l'algorithme spécifié
+    hasher = hashlib.new(algorithm)
     
-    return hashed
+    # Mettre à jour avec les données
+    hasher.update(data_bytes)
+    
+    # Retourner le hash en hexadécimal
+    return hasher.hexdigest()
 
-def verify_password(plain_password: str, hashed_password: bytes) -> bool:
+def verify_hash(data: str, expected_hash: str, algorithm: str = 'sha256') -> bool:
     """
-    Verify a password against its hash
+    Vérifie si une donnée correspond à un hash
     
     Args:
-        plain_password (str): The password to check
-        hashed_password (bytes): The stored hash to check against
+        data (str): La donnée à vérifier
+        expected_hash (str): Le hash attendu
+        algorithm (str): L'algorithme utilisé pour le hash
         
     Returns:
-        bool: True if password matches, False otherwise
+        bool: True si le hash correspond, False sinon
     """
-    return bcrypt.checkpw(
-        plain_password.encode('utf-8'),
-        hashed_password
-    )
+    actual_hash = calculate_hash(data, algorithm)
+    return actual_hash == expected_hash
 
 # Example usage
 if __name__ == "__main__":
-    # Example 1: Hash a password
-    password = "mon_mot_de_passe_123"
-    hashed = hash_password(password)
-    print(f"\nPassword: {password}")
-    print(f"Hashed : {hashed}")
+    # Example 1: Hasher une chaîne
+    data = "donnée_à_hasher_123"
+    hashed = calculate_hash(data)
+    print(f"\nDonnée: {data}")
+    print(f"Hash (SHA-256): {hashed}")
     
-    # Example 2: Verify correct password
-    is_valid = verify_password(password, hashed)
-    print(f"\nCorrect password valid? {is_valid}")  # Should print True
+    # Example 2: Vérifier le hash
+    is_valid = verify_hash(data, hashed)
+    print(f"\nHash vérifié? {is_valid}")  # Devrait afficher True
     
-    # Example 3: Verify wrong password
-    wrong_password = "mauvais_mot_de_passe"
-    is_valid = verify_password(wrong_password, hashed)
-    print(f"Wrong password valid? {is_valid}")  # Should print False
-    
-    # Example 4: Hash is different each time (due to random salt)
-    print("\nMultiple hashes of same password:")
+    # Example 3: Même donnée = même hash
+    print("\nMultiples hashs de la même donnée (doivent être identiques):")
     for _ in range(3):
-        print(hash_password(password))
+        print(calculate_hash(data))
+        
+    # Example 4: Différents algorithmes
+    print("\nMême donnée avec différents algorithmes:")
+    for algo in ['sha256', 'sha512', 'md5']:
+        print(f"{algo}: {calculate_hash(data, algo)}")

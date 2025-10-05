@@ -63,7 +63,9 @@ def predict_rows(rows):
 
     return labels,prob_scores
 
-rows = [[234,432,-394,143,231,47,643,712,-23,926],
-        [769,432,-34,535,231,-43,643,798,23,726]]
 
-predict_rows(rows)
+if __name__ == "__main__":
+    rows = [[234,432,-394,143,231,47,643,712],
+            [769,432,-34,535,231,-43,643,798]]
+
+    predict_rows(rows)
