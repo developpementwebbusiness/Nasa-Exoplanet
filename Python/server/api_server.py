@@ -44,9 +44,7 @@ class DonneesEntree(BaseModel):
 
 # Définir la structure des données de sortie
 class ReponseIA(BaseModel):
-    statut: str
-    prediction: dict
-    user_id: str
+    data : list[dict]
 
 # Endpoint de santé pour vérifier que l'API fonctionne
 @app.get("/")
@@ -82,7 +80,7 @@ async def predire(donnees: DonneesEntree):
         
         # Préparer la réponse JSON
         #Ajouter la bonne liste de hashage et donner la liste de donnée
-        return output_json(data_output=resultat_ia,list_hash=data[1],list_name=data[2])
+        return {"data" : output_json(data_output=resultat_ia,list_hash=data[1],list_name=data[2])}
         
     except Exception as e:
         logger.error(f"Erreur lors de la prédiction: {str(e)}")
@@ -95,30 +93,193 @@ async def predire(donnees: DonneesEntree):
 # ----------------------
 # File upload / download
 # ----------------------
-@app.post("/upload_txt")
-async def upload_txt(file: UploadFile = File(...), user_id: str = "anon"):
-    """Receive a .txt file (multipart/form-data) and save it to the uploads directory."""
-    if not file.filename.lower().endswith('.txt'):
-        raise HTTPException(status_code=400, detail="Only .txt files are accepted")
-    dest = UPLOAD_DIR / file.filename
+# Endpoint pour importer 3 fichiers simultanément
+# Endpoint pour importer 3 fichiers dans un dossier IA spécifique
+@app.post("/import_ia_files")
+async def import_ia_files(
+    files: List[UploadFile] = File(...),
+    ia_folder: str = "IA_1",  # IA_1, IA_2, etc.
+    user_id: str = "anon"
+):
+    """
+    Importe exactement 3 fichiers dans un dossier IA spécifique.
+    Exemple: Data/IA_1/
+    """
+    if len(files) != 3:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Exactement 3 fichiers requis, {len(files)} reçus"
+        )
+    
+    # Définir le chemin destination: utils/Data/IA_X/
+    dest_path = BASE_DIR / "utils" / "Data" / ia_folder
+    dest_path.mkdir(parents=True, exist_ok=True)
+    
+    result = {"imported": [], "failures": [], "destination": str(dest_path)}
+    
+    for file in files:
+        dest_file = dest_path / file.filename
+        
+        try:
+            with dest_file.open("wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            result["imported"].append({
+                "filename": file.filename,
+                "size": dest_file.stat().st_size,
+                "path": str(dest_file)
+            })
+            logger.info(f"✓ Importé dans {ia_folder}: {file.filename} par {user_id}")
+            
+        except Exception as e:
+            result["failures"].append({
+                "filename": file.filename,
+                "error": str(e)
+            })
+            logger.error(f"✗ Échec import {file.filename}: {str(e)}")
+        finally:
+            await file.close()
+    
+    return {
+        "status": "completed",
+        "ia_folder": ia_folder,
+        "user_id": user_id,
+        "imported_count": len(result["imported"]),
+        "details": result
+    }
+
+
+# Endpoint pour exporter 3 fichiers depuis un dossier IA
+@app.get("/export_ia_files/{ia_folder}")
+async def export_ia_files(
+    ia_folder: str,  # IA_1, IA_2, etc.
+    file_names: List[str] = None
+):
+    """
+    Exporte 3 fichiers depuis un dossier IA spécifique dans un ZIP.
+    Si file_names n'est pas fourni, exporte les 3 premiers fichiers trouvés.
+    Exemple: GET /export_ia_files/IA_1?file_names=file1.csv&file_names=file2.csv&file_names=file3.csv
+    """
+    import zipfile
+    import io
+    from fastapi.responses import Response
+    
+    # Chemin source: utils/Data/IA_X/
+    source_path = BASE_DIR / "utils" / "Data" / ia_folder
+    
+    if not source_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dossier IA introuvable: {ia_folder}"
+        )
+    
+    # Si aucun fichier spécifié, prendre les 3 premiers fichiers
+    if file_names is None or len(file_names) == 0:
+        all_files = [f.name for f in source_path.iterdir() if f.is_file()]
+        file_names = all_files[:3]
+    
+    if len(file_names) != 3:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Exactement 3 fichiers requis, {len(file_names)} fournis"
+        )
+    
+    zip_buffer = io.BytesIO()
+    
     try:
-        with dest.open('wb') as f:
-            shutil.copyfileobj(file.file, f)
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for file_name in file_names:
+                file_path = source_path / file_name
+                
+                if file_path.exists() and file_path.is_file():
+                    # Ajouter au ZIP avec structure: IA_X/filename
+                    arcname = f"{ia_folder}/{file_name}"
+                    zip_file.write(file_path, arcname=arcname)
+                    logger.info(f"✓ Ajouté au ZIP depuis {ia_folder}: {file_name}")
+                else:
+                    logger.warning(f"✗ Fichier introuvable dans {ia_folder}: {file_name}")
+        
+        zip_buffer.seek(0)
+        
+        headers = {
+            "Content-Disposition": f"attachment; filename={ia_folder}_export.zip"
+        }
+        
+        return Response(
+            zip_buffer.getvalue(),
+            headers=headers,
+            media_type="application/zip"
+        )
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de l'export depuis {ia_folder}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de l'export: {str(e)}"
+        )
     finally:
-        await file.close()
-    logger.info(f"Uploaded file {file.filename} from user {user_id}")
-    return {"status": "uploaded", "filename": file.filename, "user_id": user_id}
+        zip_buffer.close()
 
 
-@app.get("/download_txt/{filename}")
-async def download_txt(filename: str):
-    """Return a .txt file from the uploads directory if it exists."""
-    if '..' in filename or filename.startswith('/'):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    path = UPLOAD_DIR / filename
-    if not path.exists() or not path.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path, media_type='text/plain', filename=filename)
+# Endpoint pour copier 3 fichiers d'un dossier IA à un autre
+@app.post("/copy_ia_files")
+async def copy_ia_files(
+    source_ia: str,  # IA_1
+    target_ia: str,  # IA_2
+    file_names: List[str]
+):
+    """
+    Copie 3 fichiers depuis un dossier IA vers un autre.
+    Exemple: IA_1 -> IA_2
+    """
+    if len(file_names) != 3:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Exactement 3 fichiers requis, {len(file_names)} fournis"
+        )
+    
+    source_path = BASE_DIR / "utils" / "Data" / source_ia
+    target_path = BASE_DIR / "utils" / "Data" / target_ia
+    
+    if not source_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dossier source introuvable: {source_ia}"
+        )
+    
+    target_path.mkdir(parents=True, exist_ok=True)
+    
+    result = {"copied": [], "failures": []}
+    
+    for file_name in file_names:
+        source_file = source_path / file_name
+        target_file = target_path / file_name
+        
+        try:
+            if source_file.exists():
+                shutil.copy2(source_file, target_file)
+                result["copied"].append({
+                    "filename": file_name,
+                    "from": str(source_file),
+                    "to": str(target_file)
+                })
+                logger.info(f"✓ Copié: {source_ia}/{file_name} -> {target_ia}/{file_name}")
+            else:
+                result["failures"].append(f"{file_name}: introuvable dans {source_ia}")
+                logger.warning(f"✗ Fichier introuvable: {source_ia}/{file_name}")
+                
+        except Exception as e:
+            result["failures"].append(f"{file_name}: {str(e)}")
+            logger.error(f"✗ Erreur copie {file_name}: {str(e)}")
+    
+    return {
+        "status": "completed",
+        "source": source_ia,
+        "target": target_ia,
+        "copied_count": len(result["copied"]),
+        "details": result
+    }
+
 
 # Lancer le serveur
 if __name__ == "__main__":
