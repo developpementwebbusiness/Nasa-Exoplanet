@@ -16,19 +16,19 @@ import cleaning_library as cl
 from rich import print
 
 
-#columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
+
 columnKepler = [
-    'Confirmation',       # koi_disposition
-    'OrbitalPeriod',      # koi_period
+    'Confirmation',       
+    'OrbitalPeriod',      
     'OPup',               # koi_period_err1
     'OPdown',             # koi_period_err2
-    'TransEpoch',         # koi_time0bk
+    'TransEpoch',         
     'TEup',               # koi_time0bk_err1
     'TEdown',             # koi_time0bk_err2
     'Impact',             # koi_impact
     'ImpactUp',           # koi_impact_err1
     'ImpactDown',         # koi_impact_err2
-    'TransitDur',         # koi_duration
+    'TransitDur',         
     'DurUp',              # koi_duration_err1
     'DurDown',            # koi_duration_err2
     'TransitDepth',       # koi_depth
@@ -40,7 +40,7 @@ columnKepler = [
     'EquilibriumTemp',    # koi_teq
     'TempUp',             # koi_teq_err1
     'TempDown',           # koi_teq_err2
-    'InsolationFlux',     # koi_insol
+    'InsolationFlux',     
     'InsolationUp',       # koi_insol_err1
     'InsolationDown',     # koi_insol_err2
     'TransitSNR',         # koi_model_snr
@@ -53,9 +53,9 @@ columnKepler = [
     'StellarRadius',      # koi_srad
     'SradUp',             # koi_srad_err1
     'SradDown',           # koi_srad_err2
-    'RA',                 # ra
-    'Dec',                # dec
-    'KeplerMag'           # koi_kepmag
+    'RA',                 
+    'Dec',                
+    'KeplerMag'           
 ]
 
 
@@ -63,14 +63,23 @@ columnKepler = [
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
-df = pd.read_csv('Python/server/utils/Data/kepler.csv',skiprows=45)
+df = pd.read_csv('utils/Data/kepler.csv',skiprows=45)
 df.columns = columnKepler
 
-df = cl.clean_array(df)
+
+
+#cl.rearrange_columns_by_non_none_ratio(df)
+print(df.columns)
+#print(df)
+
+dfc = cl.clean_array(df)
+print(dfc.columns)
+#print(dfc)
+
+df = dfc
 
 print(type(df))
-print(df.columns)
-print(df.shape[0])
+
 
 binary_replace = {'CANDIDATE':'True', 
                   'FALSE POSITIVE': 'False', 
@@ -85,7 +94,6 @@ binary_replace = {'CANDIDATE':'True',
                   'PC': 'True'}
 
 df = df.applymap(lambda x: binary_replace.get(x, x) if isinstance(x, str) else x)
-print(df)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
@@ -104,8 +112,8 @@ X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne
 le = LabelEncoder()
 Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
-joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
-joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
+joblib.dump(scaler, "utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
+joblib.dump(le, "utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data split
@@ -248,14 +256,14 @@ for epoch in range(1, 201):   # 30 epochs example
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         # Save the model's weights to disk
-        torch.save(model.state_dict(), "Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth")   # checkpoint
+        torch.save(model.state_dict(), "utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth")   # checkpoint
     
     # --- Print progress for this epoch ---
     print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
 
 
 # This ensures we use the model that performed best on validation data
-model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=DEVICE))
+model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=DEVICE))
 
 model.eval()  #same idea as the other times we called our Datakoaders
 preds, trues = [], []

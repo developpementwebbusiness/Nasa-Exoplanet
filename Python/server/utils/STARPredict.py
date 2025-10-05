@@ -9,8 +9,8 @@ import torch.nn.functional as F
 
 #Loading scalers used for AI training
 
-scaler = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
-le = joblib.load("Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
+scaler = joblib.load("utils/Data/AI/STAR_AI_v2/scaler.pkl") #to scale data the same way
+le = joblib.load("utils/Data/AI/STAR_AI_v2/label_encoder.pkl") #to convert predictions back to True and False
 
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
@@ -41,7 +41,7 @@ model = SimpleMLP(
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-model.load_state_dict(torch.load("Python/server/utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
+model.load_state_dict(torch.load("utils/Data/AI/STAR_AI_v2/STAR_AI_v2.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
 model.eval()  # important for evaluation
 
 def predict_rows(rows):
@@ -63,3 +63,13 @@ def predict_rows(rows):
         prob_scores = probs.max(dim=1).values.numpy()
 
     return labels,prob_scores
+
+'''
+rows = [[0.12, 0.45, 0.78, 0.34, 0.91, 0.67, 0.23, 0.56, 0.89, 0.10, 0.33, 0.74, 0.58, 0.29, 0.62, 0.85, 0.41, 0.19, 0.93, 0.77, 0.36, 0.64, 0.28, 0.50, 0.81, 0.07, 0.39, 0.66, 0.94, 0.21, 0.59, 0.73, 0.31, 0.48, 0.86],
+    [0.03, 0.26, 0.49, 0.72, 0.95, 0.18, 0.41, 0.64, 0.87, 0.10, 0.33, 0.56, 0.79, 0.02, 0.25, 0.48, 0.71, 0.94, 0.17, 0.40, 0.63, 0.86, 0.09, 0.32, 0.55, 0.78, 0.01, 0.24, 0.47, 0.70, 0.93, 0.16, 0.39, 0.62, 0.85],
+    [0.14, 0.37, 0.60, 0.83, 0.06, 0.29, 0.52, 0.75, 0.98, 0.11, 0.34, 0.57, 0.80, 0.03, 0.26, 0.49, 0.72, 0.95, 0.18, 0.41, 0.64, 0.87, 0.10, 0.33, 0.56, 0.79, 0.02, 0.25, 0.48, 0.71, 0.94, 0.17, 0.40, 0.63, 0.86]]
+
+
+
+print(predict_rows(rows))
+'''

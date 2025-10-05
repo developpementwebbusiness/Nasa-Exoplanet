@@ -54,6 +54,11 @@ export function ProbabilityGraph({
     "monotone"
   );
   const [strokeWidth, setStrokeWidth] = useState(2);
+  const [brushIndexes, setBrushIndexes] = useState<{
+    startIndex: number;
+    endIndex: number;
+  } | null>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   const allChartData = useMemo(
     () =>
@@ -175,7 +180,26 @@ export function ProbabilityGraph({
     setShowGrid(true);
     setLineType("monotone");
     setStrokeWidth(2);
+    setBrushIndexes(null);
   }, []);
+
+  const handleBrushChange = useCallback(
+    (brushData: any) => {
+      if (
+        !isMouseDown &&
+        brushData &&
+        brushData.startIndex !== undefined &&
+        brushData.endIndex !== undefined
+      ) {
+        // Only update when mouse is released
+        setBrushIndexes({
+          startIndex: brushData.startIndex,
+          endIndex: brushData.endIndex,
+        });
+      }
+    },
+    [isMouseDown]
+  );
 
   // NOW check if empty AFTER all hooks
   if (predictions.length === 0) {
@@ -541,6 +565,11 @@ export function ProbabilityGraph({
             fill="rgba(59, 130, 246, 0.1)"
             travellerWidth={12}
             y={480}
+            onChange={handleBrushChange}
+            startIndex={brushIndexes?.startIndex}
+            endIndex={brushIndexes?.endIndex}
+            onMouseDown={() => setIsMouseDown(true)}
+            onMouseUp={() => setIsMouseDown(false)}
           />
         </LineChart>
       </ResponsiveContainer>

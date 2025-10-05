@@ -86,8 +86,8 @@ def setup(df):
     le = LabelEncoder()
     Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
-    joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
-    joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
+    joblib.dump(scaler, "utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
+    joblib.dump(le, "utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
 
     # split data into train (70%), temp (30%)
     X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.30, random_state=42,stratify=Y) # 70% XYtrain, 30% XYtemp, 42 for reproducibility (imagine a minecraft seed)
@@ -127,7 +127,7 @@ set_seed(67)
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
-    def __init__(self, input_dim, hidden=[128,64], num_classes=3, dropout=0.2):
+    def __init__(self, input_dim, hidden=[128,64], dropout=0.2):
         #amount of columns in input data, list of hidden layer sizes, number of output classes, dropout rate #Adapt these hyperparameters depending on your dataset
 
         super().__init__() #call parent constructor to get nn.Module functionalities
@@ -141,26 +141,27 @@ class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
             #layers is essentially a cycle of Linear -> ReLU -> Dropout, repeated for each hidden layer size in the hidden list
 
             in_dim = h
-        layers.append(nn.Linear(in_dim, num_classes))   #final layer without activation 
+        layers.append(nn.Linear(in_dim, 2))   #final layer without activation 
         self.net = nn.Sequential(*layers) #automatically inputs data through all layer functions in sequence
 
     def forward(self, x):
         return self.net(x)
+def devicesel():
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return DEVICE
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-def definemodel(X,hiddenlayers=[128,64],device=DEVICE):
-    DEVICE = device
+def definemodel(X,hiddenlayers=[128,64]):
+    DEVICE = devicesel()
     model = SimpleMLP(
-        input_dim=X.shape[0], #number of features in input data
+        input_dim=X.shape[1], #number of features in input data
         hidden=hiddenlayers,  #size of hidden layers, can be changed
         num_classes=2 #number of output classes (ex: exoplanet, false positive, candidate)
         ).to(DEVICE)
     return model
 
 def weights(Y,model):
-    cw = compute_class_weight('balanced', classes=np.unique(Y), y=setup)
-    class_weights = torch.tensor(cw, dtype=torch.float32).to(DEVICE)
+    cw = compute_class_weight('balanced', classes=np.unique(Y), y=Y)
+    class_weights = torch.tensor(cw, dtype=torch.float32).to(devicesel())
 
     #When computing the loss, misclassifying a minority class will incur a higher penalty than misclassifying a majority class
 
@@ -177,7 +178,7 @@ def train_one_epoch(model, loader, optimizer, criterion):
     running_loss = 0.0 #to accumulate loss over the epoch
 
     for Xb, yb in loader:
-        Xb, yb = Xb.to(DEVICE), yb.to(DEVICE)
+        Xb, yb = Xb.to(devicesel()), yb.to(devicesel())
         optimizer.zero_grad() #reset gradients from previous step for gradient descent
         logits = model(Xb) #passes the batch through the model to get raw output scores (logits), shape: (batch, num_classes)
         loss = criterion(logits, yb) #compute loss between logits and true labels using CrossEntropyLoss function
@@ -196,7 +197,7 @@ def evaluate(model, loader, criterion):
 
     with torch.no_grad(): #to avoid computing gradients during evaluation 
         for Xb, yb in loader:
-            Xb, yb = Xb.to(DEVICE), yb.to(DEVICE) 
+            Xb, yb = Xb.to(devicesel()), yb.to(devicesel()) 
             logits = model(Xb)
             loss = criterion(logits, yb)
             running_loss += loss.item() * Xb.size(0) #accumulate loss, scaled by batch size
@@ -207,9 +208,9 @@ def evaluate(model, loader, criterion):
     acc = accuracy_score(trues, preds) #compute accuracy
     return running_loss / len(loader.dataset), acc #average loss and accuracy over the evaluation
 
-def training(epochs,model,train_loader,val_loader,test_loader,AIname,device,le,optimizer,criterion): 
+def training(epochs,model,train_loader,val_loader,test_loader,AIname,le,optimizer,criterion): 
 
-    DEVICE = device
+    DEVICE = devicesel()
     
     best_val_loss = float("inf")  # start with "infinity" so any real loss will be smaller
 
@@ -253,7 +254,7 @@ setup(df) en pandas
 
 loads,scale,label,x,y = setup(df)
 
-model = definemodel(x,hiddenlayers,device=DEVICE)
+model = definemodel(x,hiddenlayers)
 
 cri, opti = weights(y,model)
 

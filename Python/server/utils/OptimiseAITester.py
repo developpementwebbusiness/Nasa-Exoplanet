@@ -43,8 +43,8 @@ X = scaler.fit_transform(df[features].values.astype(np.float32)) #(value-moyenne
 le = LabelEncoder()
 Y = le.fit_transform(df[label_col].values)   #transforms labels to integers
 
-joblib.dump(scaler, "Python/server/utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
-joblib.dump(le, "Python/server/utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
+joblib.dump(scaler, "utils/Data/AI/STAR_AI_v2/scaler.pkl") # save the scaler for later use
+joblib.dump(le, "utils/Data/AI/STAR_AI_v2/label_encoder.pkl") # save the label encoder for later use
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data split
