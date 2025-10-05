@@ -258,4 +258,6 @@ model = definemodel(x,hiddenlayers,device=DEVICE)
 cri, opti = weights(y,model)
 
 training(epochs,model,loads['train'],loads['validation'],loads['test'],AIname,device,label,opti,cri)
+
+ce que l'utilisateur doit fournir: data, hiddenlayers,epochs,AIname
 '''
