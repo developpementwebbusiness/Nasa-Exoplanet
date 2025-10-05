@@ -62,7 +62,7 @@ def predict_rows(rows):
         logits = model(X_tensor) #unprocessed  output data
         probs = F.softmax(logits,dim=1) #probability convert
         preds = logits.argmax(dim=1).numpy() #gives max
-        labels = le.inverse_transform(preds) #transforms the data into True or False
+        labels = le.inverse_transform(preds) #transforms the data into True or F*alse
         prob_scores = probs.max(dim=1).values.numpy()
 
     return labels,prob_scores
