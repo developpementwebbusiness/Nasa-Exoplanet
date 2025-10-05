@@ -267,28 +267,6 @@ def AITRAIN(data,hiddenlayers=[128,64],epochs=100,AIname='NewAI'):
 
     return classif, model_path, scaler_path, le_path
 
-def AIPredict(model_path, scaler_path, le_path, data, hiddenlayers=[128,64]):
-    scaler = joblib.load(scaler_path)
-    le = joblib.load(le_path)
-
-    model = SimpleMLP(hidden=hiddenlayers)
-    model.load_state_dict(torch.load(model_path, map_location=devicesel()))
-    model.eval()
-
-    X_nu = np.array(data, dtype=np.float32)
-    X_nu[np.isnan(X_nu)] = 0.0  # replace NaNs with 0
-    X_scaled = scaler.transform(X_nu)
-    X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
-
-    with torch.no_grad():
-
-        logits = model(X_tensor)
-        probs = torch.softmax(logits, dim=1)
-        preds = logits.argmax(dim=1).numpy()
-        labels = le.inverse_transform(preds)
-        prob_scores = probs.max(dim=1).values.numpy()
-
-    return labels, prob_scores
 
 #Function order:
 '''
