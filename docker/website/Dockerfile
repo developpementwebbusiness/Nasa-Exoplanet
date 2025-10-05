@@ -1,16 +1,19 @@
-
 FROM node:24.9-alpine3.21
 
-WORKDIR /Website ./
+# Set working directory
+WORKDIR /Website
 
+# Copy only package files first (for caching)
 COPY Website/package*.json ./
-RUN npm install
-COPY Website/ ./
 
+# Install dependencies using npm
+RUN npm install
+
+# Copy the rest of the source code
+COPY Website/ .
+
+# Expose the port your app runs on
 EXPOSE 3000
 
-#Run dev mode with hot reload
+# Run in dev mode with hot reload
 CMD ["npm", "run", "dev"]
-
-
-

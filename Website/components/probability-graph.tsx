@@ -34,12 +34,16 @@ interface ConfidenceGraphProps {
   predictions: any[];
   onSelectCandidate: (index: number) => void;
   selectedCandidate: number | null;
+  onCandidateClick?: (index: number) => void;
+  classifications?: Record<number, { type: string; comment?: string }>;
 }
 
 export function ProbabilityGraph({
   predictions,
   onSelectCandidate,
   selectedCandidate,
+  onCandidateClick,
+  classifications = {},
 }: ConfidenceGraphProps) {
   // All hooks MUST come before any conditional returns
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "low">(
@@ -139,20 +143,28 @@ export function ProbabilityGraph({
 
   const downloadCSV = useCallback(() => {
     const csv = [
-      ["Candidate Index", "Confidence %"],
-      ...chartData.map((d) => [d.index, d.confidence.toFixed(2)]),
+      ["Candidate Index", "Confidence %", "Classification", "Notes"],
+      ...chartData.map((d) => {
+        const classification = classifications[d.originalIndex];
+        return [
+          d.index,
+          d.confidence.toFixed(2),
+          classification ? classification.type.replace(/_/g, ' ') : 'Not classified',
+          classification?.comment || ''
+        ];
+      }),
     ]
-      .map((row) => row.join(","))
+      .map((row) => row.map(cell => `"${cell}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `exoplanet-confidence-${filter}.csv`;
+    a.download = `exoplanet-confidence-${filter}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [chartData, filter]);
+  }, [chartData, filter, classifications]);
 
   const resetView = useCallback(() => {
     setFilter("all");
@@ -501,8 +513,20 @@ export function ProbabilityGraph({
               fill: "#3b82f6",
               stroke: "#fff",
               strokeWidth: 2,
+              onClick: (e: any) => {
+                if (onCandidateClick && e.payload) {
+                  onCandidateClick(e.payload.originalIndex);
+                }
+              },
+              cursor: 'pointer',
             }}
             isAnimationActive={false}
+            onClick={(data: any) => {
+              if (onCandidateClick && data) {
+                onCandidateClick(data.originalIndex);
+              }
+            }}
+            cursor="pointer"
           />
 
           {/* Zoom/Pan Brush - Below Legend, Shows All Data by Default */}
