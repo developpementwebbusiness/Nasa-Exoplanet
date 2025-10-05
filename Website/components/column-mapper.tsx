@@ -223,58 +223,66 @@ export function ColumnMapper({
   useEffect(() => {
     const autoMapping: Record<string, string> = {};
 
-    // Database mappings: [K2_value, K1/Kepler_value]
-    // K2 format: disposition, pl_orbper, pl_rade, st_teff, st_rad, etc.
+    // Database mappings: [TESS_value, K2_value, K1/Kepler_value]
+    // TESS format: tfopwg_disp, pl_orbper, pl_trandurh, pl_trandep, pl_rade, st_teff, st_logg, etc.
+    // K2 format: disposition, pl_orbper, pl_trandur, pl_trandep, pl_rade, st_teff, st_rad, etc.
     // K1 format: koi_disposition, koi_period, koi_prad, koi_steff, koi_srad, etc.
-    const databaseMappings: Record<string, [string | null, string | null]> = {
-      Confirmation: ["disposition", "koi_disposition"],
-      OrbitalPeriod: ["pl_orbper", "koi_period"],
-      OPup: ["pl_orbpererr1", "koi_period_err1"],
-      OPdown: ["pl_orbpererr2", "koi_period_err2"],
-      TransEpoch: [null, "koi_time0bk"],
-      TEup: [null, "koi_time0bk_err1"],
-      TEdown: [null, "koi_time0bk_err2"],
-      Impact: [null, "koi_impact"],
-      ImpactUp: [null, "koi_impact_err1"],
-      ImpactDown: [null, "koi_impact_err2"],
-      TransitDur: [null, "koi_duration"],
-      DurUp: [null, "koi_duration_err1"],
-      DurDown: [null, "koi_duration_err2"],
-      TransitDepth: [null, "koi_depth"],
-      DepthUp: [null, "koi_depth_err1"],
-      DepthDown: [null, "koi_depth_err2"],
-      PlanetRadius: ["pl_rade", "koi_prad"],
-      RadiusUp: ["pl_radeerr1", "koi_prad_err1"],
-      RadiusDown: ["pl_radeerr2", "koi_prad_err2"],
-      EquilibriumTemp: ["pl_eqt", "koi_teq"],
-      TempUp: ["pl_eqterr1", "koi_teq_err1"],
-      TempDown: ["pl_eqterr2", "koi_teq_err2"],
-      InsolationFlux: ["pl_insol", "koi_insol"],
-      InsolationUp: ["pl_insolerr1", "koi_insol_err1"],
-      InsolationDown: ["pl_insolerr2", "koi_insol_err2"],
-      TransitSNR: [null, "koi_model_snr"],
-      StellarEffTemp: ["st_teff", "koi_steff"],
-      SteffUp: ["st_tefferr1", "koi_steff_err1"],
-      SteffDown: ["st_tefferr2", "koi_steff_err2"],
-      StellarLogG: [null, "koi_slogg"],
-      LogGUp: [null, "koi_slogg_err1"],
-      LogGDown: [null, "koi_slogg_err2"],
-      StellarRadius: ["st_rad", "koi_srad"],
-      SradUp: ["st_raderr1", "koi_srad_err1"],
-      SradDown: ["st_raderr2", "koi_srad_err2"],
-      RA: ["ra", "ra"],
-      Dec: ["dec", "dec"],
-      KeplerMag: [null, "koi_kepmag"],
+    const databaseMappings: Record<
+      string,
+      [string | null, string | null, string | null]
+    > = {
+      Confirmation: ["tfopwg_disp", "disposition", "koi_disposition"],
+      OrbitalPeriod: ["pl_orbper", "pl_orbper", "koi_period"],
+      OPup: ["pl_orbpererr1", "pl_orbpererr1", "koi_period_err1"],
+      OPdown: ["pl_orbpererr2", "pl_orbpererr2", "koi_period_err2"],
+      TransEpoch: [null, null, "koi_time0bk"],
+      TEup: [null, null, "koi_time0bk_err1"],
+      TEdown: [null, null, "koi_time0bk_err2"],
+      Impact: [null, null, "koi_impact"],
+      ImpactUp: [null, null, "koi_impact_err1"],
+      ImpactDown: [null, null, "koi_impact_err2"],
+      TransitDur: ["pl_trandurh", "pl_trandur", "koi_duration"],
+      DurUp: ["pl_trandurherr1", "pl_trandurerr1", "koi_duration_err1"],
+      DurDown: ["pl_trandurherr2", "pl_trandurerr2", "koi_duration_err2"],
+      TransitDepth: ["pl_trandep", "pl_trandep", "koi_depth"],
+      DepthUp: ["pl_trandeperr1", "pl_trandeperr1", "koi_depth_err1"],
+      DepthDown: ["pl_trandeperr2", "pl_trandeperr2", "koi_depth_err2"],
+      PlanetRadius: ["pl_rade", "pl_rade", "koi_prad"],
+      RadiusUp: ["pl_radeerr1", "pl_radeerr1", "koi_prad_err1"],
+      RadiusDown: ["pl_radeerr2", "pl_radeerr2", "koi_prad_err2"],
+      EquilibriumTemp: ["pl_eqt", "pl_eqt", "koi_teq"],
+      TempUp: ["pl_eqterr1", "pl_eqterr1", "koi_teq_err1"],
+      TempDown: ["pl_eqterr2", "pl_eqterr2", "koi_teq_err2"],
+      InsolationFlux: ["pl_insol", "pl_insol", "koi_insol"],
+      InsolationUp: ["pl_insolerr1", "pl_insolerr1", "koi_insol_err1"],
+      InsolationDown: ["pl_insolerr2", "pl_insolerr2", "koi_insol_err2"],
+      TransitSNR: [null, null, "koi_model_snr"],
+      StellarEffTemp: ["st_teff", "st_teff", "koi_steff"],
+      SteffUp: ["st_tefferr1", "st_tefferr1", "koi_steff_err1"],
+      SteffDown: ["st_tefferr2", "st_tefferr2", "koi_steff_err2"],
+      StellarLogG: ["st_logg", null, "koi_slogg"],
+      LogGUp: ["st_loggerr1", null, "koi_slogg_err1"],
+      LogGDown: ["st_loggerr2", null, "koi_slogg_err2"],
+      StellarRadius: ["st_rad", "st_rad", "koi_srad"],
+      SradUp: ["st_raderr1", "st_raderr1", "koi_srad_err1"],
+      SradDown: ["st_raderr2", "st_raderr2", "koi_srad_err2"],
+      RA: ["ra", "ra", "ra"],
+      Dec: ["dec", "dec", "dec"],
+      KeplerMag: [null, null, "koi_kepmag"],
     };
 
     // STEP 1: Detect which database format is being used
+    let tessScore = 0;
     let k2Score = 0;
     let k1Score = 0;
 
     const csvColumnsLower = csvColumns.map((col) => col.toLowerCase());
 
     // Count matches for each database format
-    Object.values(databaseMappings).forEach(([k2Col, k1Col]) => {
+    Object.values(databaseMappings).forEach(([tessCol, k2Col, k1Col]) => {
+      if (tessCol && csvColumnsLower.includes(tessCol.toLowerCase())) {
+        tessScore++;
+      }
       if (k2Col && csvColumnsLower.includes(k2Col.toLowerCase())) {
         k2Score++;
       }
@@ -283,12 +291,18 @@ export function ColumnMapper({
       }
     });
 
-    // Determine which database format to use (0 = K2, 1 = K1, null = neither/use fuzzy)
-    let detectedDB: 0 | 1 | null = null;
-    if (k2Score > k1Score && k2Score >= 3) {
-      detectedDB = 0; // K2 format detected
-    } else if (k1Score > k2Score && k1Score >= 3) {
-      detectedDB = 1; // K1/Kepler format detected
+    // Determine which database format to use (0 = TESS, 1 = K2, 2 = K1, null = neither/use fuzzy)
+    let detectedDB: 0 | 1 | 2 | null = null;
+    const maxScore = Math.max(tessScore, k2Score, k1Score);
+
+    if (maxScore >= 3) {
+      if (tessScore === maxScore) {
+        detectedDB = 0; // TESS format detected
+      } else if (k2Score === maxScore) {
+        detectedDB = 1; // K2 format detected
+      } else if (k1Score === maxScore) {
+        detectedDB = 2; // K1/Kepler format detected
+      }
     }
 
     // Short column names that should ONLY match exactly (prevent false positives)
