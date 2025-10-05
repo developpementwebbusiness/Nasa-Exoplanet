@@ -14,8 +14,6 @@ from sklearn.experimental import enable_iterative_imputer
 import cleaning_library as cl
 
 
-
-
 StandardizedColumnNames = ['Confirmation', 
 'OrbitalPeriod', 
 'TransEpoch', 
