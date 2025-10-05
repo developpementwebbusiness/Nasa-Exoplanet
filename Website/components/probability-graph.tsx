@@ -366,7 +366,9 @@ export function ProbabilityGraph({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Change line style: monotone (smooth), linear (straight), or step</p>
+              <p>
+                Change line style: monotone (smooth), linear (straight), or step
+              </p>
             </TooltipContent>
           </Tooltip>
 
@@ -376,7 +378,9 @@ export function ProbabilityGraph({
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setStrokeWidth((prev) => (prev === 2 ? 3 : prev === 3 ? 4 : 2))
+                  setStrokeWidth((prev) =>
+                    prev === 2 ? 3 : prev === 3 ? 4 : 2
+                  )
                 }
                 className="h-8"
               >

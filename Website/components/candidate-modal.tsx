@@ -36,9 +36,9 @@ export function CandidateModal({
   onClassify,
 }: CandidateModalProps) {
   const [comment, setComment] = useState(classification?.comment || "");
-  const [localClassification, setLocalClassification] = useState<"exoplanet" | "not_exoplanet" | "unsure" | null>(
-    classification?.type || null
-  );
+  const [localClassification, setLocalClassification] = useState<
+    "exoplanet" | "not_exoplanet" | "unsure" | null
+  >(classification?.type || null);
 
   // Handle Escape key press
   useEffect(() => {
@@ -177,9 +177,7 @@ export function CandidateModal({
                     }`}
                   >
                     <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-semibold text-xs">
-                      Exoplanet
-                    </span>
+                    <span className="font-semibold text-xs">Exoplanet</span>
                   </Button>
                   <Button
                     onClick={() => handleClassify("not_exoplanet")}
@@ -190,9 +188,7 @@ export function CandidateModal({
                     }`}
                   >
                     <XCircle className="w-5 h-5" />
-                    <span className="font-semibold text-xs">
-                      Not Exoplanet
-                    </span>
+                    <span className="font-semibold text-xs">Not Exoplanet</span>
                   </Button>
                   <Button
                     onClick={() => handleClassify("unsure")}
@@ -203,9 +199,7 @@ export function CandidateModal({
                     }`}
                   >
                     <HelpCircle className="w-5 h-5" />
-                    <span className="font-semibold text-xs">
-                      Unsure
-                    </span>
+                    <span className="font-semibold text-xs">Unsure</span>
                   </Button>
                 </div>
 
