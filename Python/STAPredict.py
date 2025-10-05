@@ -62,6 +62,3 @@ def predict_rows(rows):
         prob_scores = probs.max(dim=1).values.numpy()
 
     return labels,prob_scores
-
-rows = [[0.1, 0.3, 0.5, 0.2, 0.9, 0.7, 0.1, 0.05]]
-labels, probs = predict_rows(rows)
