@@ -241,19 +241,21 @@ async def import_ia_files(
     }
 
 
-# Endpoint pour exporter 3 fichiers depuis un dossier IA
+# Endpoint pour exporter TOUS les fichiers depuis un dossier IA
 @app.get("/export_ia_files/{ia_folder}")
 async def export_ia_files(
     ia_folder: str,
-    file_names: List[str] = None
+    file_names: Optional[List[str]] = Query(None)
 ):
     """
-    Exporte 3 fichiers depuis un dossier IA spécifique dans un ZIP.
-    Si file_names n'est pas fourni, exporte les 3 premiers fichiers trouvés.
+    Exporte tous les fichiers depuis un dossier IA spécifique dans un ZIP.
+    
+    - Si file_names est fourni: exporte uniquement ces fichiers
+    - Si file_names est vide/None: exporte TOUS les fichiers du dossier
     
     Exemples:
-        GET /export_ia_files/STAR_AI_v2
-        GET /export_ia_files/STAR_AI_v2?file_names=file1.pkl&file_names=file2.pkl&file_names=file3.pth
+        GET /export_ia_files/STAR_AI_v2  (exporte TOUS les fichiers)
+        GET /export_ia_files/STAR_AI_v2?file_names=file1.pkl&file_names=file2.pkl  (fichiers spécifiques)
     """
 
     # Chemin source: utils/Data/{ia_folder}/
@@ -265,16 +267,16 @@ async def export_ia_files(
             detail=f"Dossier IA introuvable: {ia_folder}"
         )
     
-    # Si aucun fichier spécifié, prendre les 3 premiers fichiers
+    # Si aucun fichier spécifié, prendre TOUS les fichiers
     if file_names is None or len(file_names) == 0:
         all_files = [f.name for f in source_path.iterdir() if f.is_file()]
-        file_names = all_files[:3]
-        logger.info(f"Aucun fichier spécifié, export des 3 premiers: {file_names}")
+        file_names = all_files
+        logger.info(f"Export de tous les fichiers ({len(file_names)}): {file_names}")
     
-    if len(file_names) != 3:
+    if len(file_names) == 0:
         raise HTTPException(
-            status_code=400,
-            detail=f"Exactement 3 fichiers requis, {len(file_names)} fournis"
+            status_code=404,
+            detail=f"Aucun fichier trouvé dans le dossier: {ia_folder}"
         )
     
     zip_buffer = io.BytesIO()
@@ -306,6 +308,8 @@ async def export_ia_files(
         headers = {
             "Content-Disposition": f"attachment; filename={ia_folder}_export.zip"
         }
+        
+        logger.info(f"Export réussi: {files_added} fichiers dans {ia_folder}_export.zip")
         
         return Response(
             zip_buffer.getvalue(),
