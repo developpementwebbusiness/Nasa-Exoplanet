@@ -6,6 +6,7 @@ import uvicorn
 import io
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 from utils.STARPredict import predict_rows
@@ -23,6 +24,15 @@ app = FastAPI(
     title="API Modèle IA",
     description="API pour communiquer avec un modèle d'intelligence artificielle",
     version="1.0.0"
+)
+
+# Configure CORS to allow requests from the Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Next.js default ports
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Ensure uploads directory exists
@@ -43,7 +53,7 @@ class ReponseIA(BaseModel):
     data: List[dict]
 
 @app.post("/predict", response_model=ReponseIA)
-async def predire(donnees: PredictRequest):
+async def predire(donnees: PredictRequest, model_id: Optional[str] = Query(None, description="Model ID to use for prediction. If not specified, uses default model.")):
     """
     Unified prediction endpoint that handles both single and batch predictions.
     
@@ -162,26 +172,6 @@ async def predire(donnees: PredictRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
-@app.get("/test_prediction")
-async def test_prediction():
-    """Test endpoint with dummy data to verify the API is working"""
-    try:
-        # ✅ 35 test values
-        test_row = [0.1 + (i * 0.02) for i in range(35)]
-        
-        labels, confidence_scores = predict_rows([test_row])
-        
-        result = [{
-            "name": "Test_Exoplanet",
-            "score": float(confidence_scores[0]),
-            "label": bool(labels[0])
-        }]
-        
-        return {"data": result}
-        
-    except Exception as e:
-        return {"error": str(e)}
-
 @app.get("/export_model")
 async def export_model(model_id: Optional[str] = Query(None, description="Model ID to export. Use 'all' for complete package, 'STAR_AI_v2' for base model only, or specify a custom model filename")):
     """
@@ -194,6 +184,13 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
         - Custom filename: Export specific custom model (e.g., 'my_custom_model.pth')
     
     Returns: ZIP file with requested model(s) and dependencies
+    """
+    return await _export_model_logic(model_id)
+
+@app.get("/export/{model_id}")
+async def _export_model_logic(model_id: Optional[str] = None):
+    """
+    Core logic for exporting AI model(s) as a ZIP file.
     """
     try:
         # Default to 'all' if no model_id specified
@@ -212,26 +209,12 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
                 if not model_dir.exists():
                     raise HTTPException(status_code=404, detail="Base model directory not found")
                 
-                # Add model file (required)
-                model_path = model_dir / "STAR_AI_v2.pth"
-                if model_path.exists():
-                    zip_file.write(model_path, "STAR_AI_v2/STAR_AI_v2.pth")
-                else:
-                    raise HTTPException(status_code=404, detail="Model file not found")
-                
-                # Add scaler file (required for predictions)
-                scaler_path = model_dir / "scaler.pkl"
-                if scaler_path.exists():
-                    zip_file.write(scaler_path, "STAR_AI_v2/scaler.pkl")
-                else:
-                    raise HTTPException(status_code=404, detail="Scaler file not found")
-                
-                # Add label encoder file (required for predictions)
-                le_path = model_dir / "label_encoder.pkl"
-                if le_path.exists():
-                    zip_file.write(le_path, "STAR_AI_v2/label_encoder.pkl")
-                else:
-                    raise HTTPException(status_code=404, detail="Label encoder file not found")
+                # Add ALL files from the model directory
+                for file_path in model_dir.iterdir():
+                    if file_path.is_file():
+                        # Include all model-related files: .pth, .pkl, .pt, .h5, .onnx, .json, etc.
+                        zip_file.write(file_path, f"STAR_AI_v2/{file_path.name}")
+                        logger.info(f"Added file to export: {file_path.name}")
                 
                 logger.info("Added base STAR_AI_v2 model to export")
             
@@ -292,6 +275,78 @@ async def export_model(model_id: Optional[str] = Query(None, description="Model 
     except Exception as e:
         logger.error(f"Error exporting model: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error exporting model: {str(e)}")
+
+@app.get("/models")
+async def get_available_models():
+    """
+    Get list of all available AI models.
+    Returns only directories that contain a config.json file.
+    """
+    try:
+        import json
+        
+        ai_dir = BASE_DIR / "utils" / "Data" / "AI"
+        
+        if not ai_dir.exists():
+            raise HTTPException(status_code=404, detail="AI models directory not found")
+        
+        models = []
+        default_found = False  # Track if we've found a default model
+        
+        # Check all directories in AI directory
+        for item in ai_dir.iterdir():
+            if item.is_dir():
+                # Check if folder contains config.json
+                config_file = item / "config.json"
+                
+                if config_file.exists():
+                    try:
+                        # Read config.json
+                        with open(config_file, 'r') as f:
+                            config_data = json.load(f)
+                        
+                        # Get list of model files in directory
+                        model_files = []
+                        for file in item.iterdir():
+                            if file.is_file() and file.suffix.lower() in ['.pth', '.pkl', '.pt', '.h5', '.onnx']:
+                                model_files.append(file.name)
+                        
+                        # Check if this is the default model
+                        # Only allow ONE default model (first one found)
+                        is_default = config_data.get("default", False) and not default_found
+                        if is_default:
+                            default_found = True
+                            logger.info(f"Default model set to: {item.name}")
+                        
+                        models.append({
+                            "name": item.name,
+                            "path": str(item.relative_to(BASE_DIR)),
+                            "model_type": config_data.get("model_type", "unknown"),
+                            "version": config_data.get("version", "unknown"),
+                            "default": is_default,
+                            "files": model_files,
+                            "config": config_data
+                        })
+                        
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Invalid JSON in {config_file}: {str(e)}")
+                        continue
+                    except Exception as e:
+                        logger.warning(f"Error reading config for {item.name}: {str(e)}")
+                        continue
+        
+        logger.info(f"Found {len(models)} available models with config.json")
+        
+        return {
+            "models": models,
+            "total": len(models)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing models: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error listing models: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

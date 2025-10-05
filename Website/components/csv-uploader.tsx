@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Upload, FileUp, CheckCircle2, Loader2 } from "lucide-react";
+import { Upload, FileUp, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ColumnMapper } from "@/components/column-mapper";
 import Papa from "papaparse";
@@ -12,9 +12,11 @@ import Papa from "papaparse";
 interface CSVUploaderProps {
   onUpload: (data: any[]) => void;
   isProcessing: boolean;
+  onRecheck?: () => void;
+  hasData?: boolean;
 }
 
-export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
+export function CSVUploader({ onUpload, isProcessing, onRecheck, hasData }: CSVUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [rowCount, setRowCount] = useState<number>(0);
@@ -312,6 +314,18 @@ export function CSVUploader({ onUpload, isProcessing }: CSVUploaderProps) {
                   Ready for AI analysis and manual classification
                 </p>
               </div>
+              {onRecheck && hasData && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRecheck}
+                  disabled={isProcessing}
+                  className="flex-shrink-0"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-spin' : ''}`} />
+                  Recheck
+                </Button>
+              )}
             </div>
           </motion.div>
         )}

@@ -153,7 +153,17 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
       ).catch(() => null);
       if (response?.ok) {
         const data = await response.json();
-        setModels(data.models || []);
+        // Map the API response to our format
+        const mappedModels = (data.models || []).map((model: any) => ({
+          name: model.name,
+          accuracy: null, // API doesn't provide accuracy yet
+          samples: model.files?.length || 0,
+          isDefault: model.default === true,
+          model_type: model.model_type,
+          version: model.version,
+          path: model.path,
+        }));
+        setModels(mappedModels);
       } else {
         setModels([
           { name: "default", accuracy: 0.89, samples: 1000, isDefault: true },
@@ -171,30 +181,29 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
 
   const handleExportModel = async (modelName: string) => {
     try {
+      // Use the /export/{model_id} endpoint
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/export/${modelName}`
-      ).catch(() => null);
-      if (response?.ok) {
+      );
+      
+      if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${modelName}.pkl`;
+        a.download = `${modelName}.zip`; // Download as ZIP file
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        console.log(`[ModelManager] Downloaded ${modelName}.zip`);
       } else {
-        const mockData = JSON.stringify({
-          model: modelName,
-          exported: new Date().toISOString(),
-        });
-        const blob = new Blob([mockData], { type: "application/json" });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${modelName}.json`;
-        a.click();
+        console.error(`[ModelManager] Export failed: ${response.status}`);
+        alert(`Failed to export model: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("[v0] Export error:", error);
+      console.error("[ModelManager] Export error:", error);
+      alert("Failed to export model. Make sure the API server is running.");
     }
   };
 
@@ -445,14 +454,10 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-                    model.isDefault || model.name === "default"
-                      ? "bg-primary/10 border-primary/30"
-                      : "bg-secondary/50 border-border"
-                  }`}
+                  className="flex items-center justify-between p-3 rounded-xl border-2 bg-secondary/50 border-border hover:border-primary/30 transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {(model.isDefault || model.name === "default") && (
+                    {model.isDefault && (
                       <Star className="w-4 h-4 text-primary fill-primary flex-shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
@@ -460,17 +465,25 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                         <span className="text-sm font-bold text-foreground truncate">
                           {model.name}
                         </span>
-                        {(model.isDefault || model.name === "default") && (
+                        {model.isDefault && (
                           <Badge className="text-xs bg-primary text-primary-foreground flex-shrink-0">
                             Default
                           </Badge>
                         )}
+                        {model.version && (
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            v{model.version}
+                          </Badge>
+                        )}
                       </div>
-                      {model.accuracy && (
-                        <span className="text-xs text-muted-foreground">
-                          Accuracy: {(model.accuracy * 100).toFixed(1)}%
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        {model.model_type && (
+                          <span>{model.model_type}</span>
+                        )}
+                        {model.accuracy && (
+                          <span>• {(model.accuracy * 100).toFixed(1)}% accuracy</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <Button
@@ -478,6 +491,7 @@ export function ModelManager({ classifications, csvData }: ModelManagerProps) {
                     size="sm"
                     onClick={() => handleExportModel(model.name)}
                     className="hover:bg-primary/10 hover:text-primary flex-shrink-0"
+                    title="Download model as ZIP"
                   >
                     <Download className="w-4 h-4" />
                   </Button>
