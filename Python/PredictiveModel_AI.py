@@ -278,6 +278,8 @@ with open('KOICopy.csv','r') as file:
         n+=1
 
 print('amount of lines: ', n)
+print(type(df))
+
 
 #----------------------------------------------------------------------
 #HOW TO INTERPRET THE DATA
