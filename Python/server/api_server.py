@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List
 import logging
 from model import MonModeleIA
-from utils.STAPredict import predict_rows
+from utils.STARPredict import predict_rows
 from utils.utils_json import convert, output_json
 
 
@@ -81,7 +81,6 @@ async def predire(donnees: DonneesEntree):
         logger.info(f"Prédiction effectuée: {resultat_ia}")
         
         # Préparer la réponse JSON
-        
         return output_json(data_input = donnees.features, data_output=resultat_ia)
         
     except Exception as e:

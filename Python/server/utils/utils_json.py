@@ -1,14 +1,5 @@
 import json
-from utils.hash_utils import hash_password, verify_password
-# Pour hacher un mot de passe
-password = "mon_mot_de_passe_123"
-hashed = hash_password(password)
-
-# Pour vérifier un mot de passe
-if verify_password(password, hashed):
-    print("Mot de passe correct!")
-else:
-    print("Mot de passe incorrect!")
+from utils.hash_utils import calculate_hash
 
 def load_json(json_fname):
     try:
@@ -52,7 +43,7 @@ def convert(data):
 
 def output_json(data_input,data_output):
     data_final_output = {}
-    list_hash = [hash_password(str(element)) for element in data_input["data"]]
+    list_hash = [calculate_hash(str(element)) for element in data_input["data"]]
     for i in range(len(data_output[0])):
         data_final_output[list_hash[i]] = {"score":data_output[0][i],"labels":data_output[1][i]}
     return data_final_output
