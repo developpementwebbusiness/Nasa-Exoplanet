@@ -9,8 +9,8 @@ import torch.nn.functional as F
 
 #Loading scalers used for AI training
 
-scaler = joblib.load("scaler.pkl") #to scale data the same way
-le = joblib.load("label_encoder.pkl") #to convert predictions back to True and False
+scaler = joblib.load("Data/scaler.pkl") #to scale data the same way
+le = joblib.load("Data/label_encoder.pkl") #to convert predictions back to True and False
 
 class SimpleMLP(nn.Module): #Multi Layer Perceptron subclass of nn.Module
 
@@ -40,7 +40,7 @@ model = SimpleMLP(
     num_classes=len(le.classes_) #number of output classes (ex: exoplanet, false positive, candidate)
     )
 
-model.load_state_dict(torch.load("STAR_AI.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
+model.load_state_dict(torch.load("Data/STAR_AI.pth", map_location=torch.device("cpu"))) #to ensure it works even without cpu
 model.eval()  # important for evaluation
 
 def predict_rows(rows):
@@ -59,10 +59,10 @@ def predict_rows(rows):
         probs = F.softmax(logits,dim=1) #probability convert
         preds = logits.argmax(dim=1).numpy() #gives max
         labels = le.inverse_transform(preds) #transforms the data into True or False
-        conf_scores = probs.max(dim=1).values.np()
+        prob_scores = probs.max(dim=1).values.numpy()
 
-    return labels,conf_scores
+    return labels,prob_scores
 
 rows = [[0.1, 0.3, 0.5, 0.2, 0.9, 0.7, 0.1, 0.05]]
-labels, confidences = predict_rows(rows)
-print(labels[0], confidences[0])
+labels, probs = predict_rows(rows)
+print(f"Exoplanet ?: {labels[0]}, Confidence: {probs[0]}")
