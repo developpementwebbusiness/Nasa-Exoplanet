@@ -53,7 +53,7 @@ Example on Windows:
 
 <img width="987" height="720" alt="Command Prompt Example" src="https://github.com/user-attachments/assets/bed34495-3864-405e-a640-0d325936fb51" />
 
-Navigate to the directory where you cloned or extracted the project:
+Navigate to the directory where you cloned or extracted the project for exemple :
 
 ```bash
 cd C:\Nasa-Exoplanet
@@ -70,6 +70,7 @@ Once inside the project directory, run the following command to build and start 
 ```bash
 docker compose up --build
 ```
+With everything done it should look like this in the **Command Prompt** (Windows) :
 
 <img width="2326" height="542" alt="Docker Compose Windows" src="https://github.com/user-attachments/assets/8e596af6-17f1-4d9d-8eed-f54de7004c69" />
 
