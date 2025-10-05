@@ -1,4 +1,3 @@
-import os
 import joblib
 import random
 import numpy as np
@@ -15,14 +14,13 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from rich import print
 
-#os.chdir('C:/Coding/Nasa-Exoplanet/server/utils/Data')
 
 columnnames = ['Confirmation','OrbitalPeriod','TransitDur','TransitDepth','PlanetRadius','EquilibriumTemp','InsolationFlux','StellarEffectiveTemp','StellarRadius','RA','Dec']
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data import
 
-
+df = pd.read_csv('Python/server/utils/Data/ExoHarmonious')
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Data set-up
@@ -186,7 +184,7 @@ for epoch in range(1, 201):   # 30 epochs example
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         # Save the model's weights to disk
-        torch.save(model.state_dict(), os.path.join("Python", "server", "utils", "Data", "STAR_AI_v2.pth"))   # checkpoint
+        torch.save(model.state_dict(), "Python/server/utils/Data/STAR_AI_v2.pth")   # checkpoint
     
     # --- Print progress for this epoch ---
     print(f"Epoch {epoch:02d} | train_loss {train_loss:.4f} | val_loss {val_loss:.4f} | val_acc {val_acc:.4f}")
@@ -208,4 +206,5 @@ trues = np.concatenate(trues)
 
 from sklearn.metrics import classification_report
 labels = np.unique(trues)
-print(classification_report(trues, preds, labels=labels, target_names=le.inverse_transform(labels)))
+target_names = [str(x) for x in le.inverse_transform(labels)]
+print(classification_report(trues, preds, labels=labels, target_names=target_names))
