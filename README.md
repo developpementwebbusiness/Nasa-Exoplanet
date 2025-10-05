@@ -23,19 +23,9 @@ Before you begin, ensure you have **Docker Desktop** installed on your machine.
 
 You can either **clone** or **download** the project.
 
-### Option 1 — Clone via Git
+### Option 1 — Download ZIP
 
-Open your terminal or command prompt and run:
-
-```bash
-git clone https://github.com/developpementwebbusiness/Nasa-Exoplanet.git
-```
-
-### Option 2 — Download ZIP
-
-Alternatively, you can download the repository manually:
-
-1. Go to the GitHub page of the project.
+1. Go to the top of the github repository and click on the code icon.
 2. Click on **Code → Download ZIP**.
 3. Unzip the folder in your desired location, for example:
 
@@ -43,13 +33,23 @@ Alternatively, you can download the repository manually:
    C:\Nasa-Exoplanet
    ```
 
----
+### Option 2 — Clone via Git
+Alternatively, you can clone the repository manually:
+Open your terminal or command prompt and run:
 
+```bash
+git clone https://github.com/developpementwebbusiness/Nasa-Exoplanet.git
+```
+⚠️ Note: You must have Git installed on your system to use this command.
+If you don’t have it yet, download and install it from the official website:
+👉 https://git-scm.com/downloads
 ## ▶️ Launching the App
 
 You can launch the app directly by navigating into the Nasa-Exoplanet folder and double-clicking the file:
 
 app_launcher.bat
+
+⚠️ Windows only: The app_launcher.bat file is a Windows batch script and will not work on Linux or macOS systems.
 
 ---
 
