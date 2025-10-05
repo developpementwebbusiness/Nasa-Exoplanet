@@ -69,39 +69,105 @@ export function ColumnMapper({ csvColumns, onConfirm, onCancel }: ColumnMapperPr
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [showWarning, setShowWarning] = useState(false);
 
-  // Auto-detect column mappings
+  // Auto-detect column mappings with improved algorithm
   useEffect(() => {
     const autoMapping: Record<string, string> = {};
     
+    // Normalize function for better matching
+    const normalize = (str: string) => 
+      str.toLowerCase()
+         .replace(/[_\s\-\.]/g, '')  // Remove underscores, spaces, hyphens, dots
+         .replace(/up$|down$|err1$|err2$/g, '');  // Remove common suffixes
+    
     REQUIRED_COLUMNS.forEach((col) => {
-      // Try exact match with original name
-      const exactMatch = csvColumns.find(
-        (csvCol) => csvCol.toLowerCase() === col.original.toLowerCase()
-      );
-      if (exactMatch) {
-        autoMapping[col.key] = exactMatch;
-        return;
-      }
+      let bestMatch: string | null = null;
+      let bestScore = 0;
 
-      // Try exact match with standardized name
-      const standardMatch = csvColumns.find(
-        (csvCol) => csvCol.toLowerCase() === col.key.toLowerCase()
-      );
-      if (standardMatch) {
-        autoMapping[col.key] = standardMatch;
-        return;
-      }
+      csvColumns.forEach((csvCol) => {
+        let score = 0;
+        const csvNorm = normalize(csvCol);
+        const keyNorm = normalize(col.key);
+        const origNorm = normalize(col.original);
 
-      // Try partial match
-      const partialMatch = csvColumns.find((csvCol) => {
-        const csvLower = csvCol.toLowerCase().replace(/[_\s]/g, '');
-        const keyLower = col.key.toLowerCase();
-        const origLower = col.original.toLowerCase().replace(/[_\s]/g, '');
-        return csvLower.includes(keyLower) || csvLower.includes(origLower) ||
-               keyLower.includes(csvLower) || origLower.includes(csvLower);
+        // 1. Exact match (highest priority) - 100 points
+        if (csvCol.toLowerCase() === col.original.toLowerCase() ||
+            csvCol.toLowerCase() === col.key.toLowerCase()) {
+          score = 100;
+        }
+        // 2. Exact match after normalization - 90 points
+        else if (csvNorm === origNorm || csvNorm === keyNorm) {
+          score = 90;
+        }
+        // 3. Original name contains CSV column or vice versa - 80 points
+        else if (col.original.toLowerCase().includes(csvCol.toLowerCase()) ||
+                 csvCol.toLowerCase().includes(col.original.toLowerCase())) {
+          score = 80;
+        }
+        // 4. Normalized contains match - 70 points
+        else if (origNorm.includes(csvNorm) || csvNorm.includes(origNorm)) {
+          score = 70;
+        }
+        // 5. Key name similarity - 60 points
+        else if (keyNorm.includes(csvNorm) || csvNorm.includes(keyNorm)) {
+          score = 60;
+        }
+        // 6. Description keywords match - 50 points
+        else {
+          const descWords = col.description.toLowerCase().split(/\s+/);
+          const csvWords = csvCol.toLowerCase().split(/[_\s\-\.]/);
+          const matchingWords = descWords.filter(word => 
+            word.length > 3 && csvWords.some(csvWord => csvWord.includes(word) || word.includes(csvWord))
+          );
+          if (matchingWords.length > 0) {
+            score = 50 + (matchingWords.length * 5);
+          }
+        }
+
+        // Special handling for error columns (err1, err2, up, down)
+        if (col.key.includes('Up') || col.key.includes('Down')) {
+          if (csvCol.toLowerCase().includes('err1') && col.key.includes('Up')) score += 10;
+          if (csvCol.toLowerCase().includes('err2') && col.key.includes('Down')) score += 10;
+          if (csvCol.toLowerCase().includes('up') && col.key.includes('Up')) score += 10;
+          if (csvCol.toLowerCase().includes('down') && col.key.includes('Down')) score += 10;
+        }
+
+        // Common aliases and variations
+        const aliases: Record<string, string[]> = {
+          'OrbitalPeriod': ['period', 'orbital_period', 'orb_period', 'koi_period'],
+          'PlanetRadius': ['radius', 'planet_radius', 'prad', 'koi_prad'],
+          'TransitDepth': ['depth', 'transit_depth', 'koi_depth'],
+          'TransitDur': ['duration', 'transit_duration', 'koi_duration'],
+          'EquilibriumTemp': ['temperature', 'temp', 'teq', 'koi_teq', 'equilibrium'],
+          'InsolationFlux': ['insolation', 'flux', 'insol', 'koi_insol'],
+          'StellarEffTemp': ['stellar_temp', 'steff', 'koi_steff', 'star_temp'],
+          'StellarRadius': ['stellar_radius', 'srad', 'koi_srad', 'star_radius'],
+          'StellarLogG': ['logg', 'slogg', 'koi_slogg', 'surface_gravity'],
+          'Impact': ['impact', 'impact_param', 'koi_impact'],
+          'TransitSNR': ['snr', 'signal_noise', 'koi_model_snr', 'signal_to_noise'],
+          'KeplerMag': ['kepmag', 'koi_kepmag', 'magnitude', 'mag'],
+          'RA': ['ra', 'right_ascension', 'rightascension'],
+          'Dec': ['dec', 'declination'],
+          'Confirmation': ['disposition', 'koi_disposition', 'status', 'confirmed'],
+          'TransEpoch': ['epoch', 'time0', 'koi_time0bk', 'transit_time'],
+        };
+
+        if (aliases[col.key]) {
+          const csvLower = csvCol.toLowerCase();
+          if (aliases[col.key].some(alias => csvLower.includes(alias))) {
+            score += 15;
+          }
+        }
+
+        // Update best match if this score is higher
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = csvCol;
+        }
       });
-      if (partialMatch) {
-        autoMapping[col.key] = partialMatch;
+
+      // Only auto-map if confidence is high enough (score >= 50)
+      if (bestMatch && bestScore >= 50) {
+        autoMapping[col.key] = bestMatch;
       }
     });
 
