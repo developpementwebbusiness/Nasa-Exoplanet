@@ -7,7 +7,8 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 // Maximum number of items to send per batch to avoid large payloads
-const MAX_BATCH_SIZE = 100;
+// Increased to handle large datasets more efficiently (fewer requests)
+const MAX_BATCH_SIZE = 5000;
 
 // Track if a prediction is already in progress
 let predictionInProgress = false;
