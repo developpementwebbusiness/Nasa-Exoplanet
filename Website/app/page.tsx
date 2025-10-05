@@ -68,7 +68,7 @@ export default function ExoplanetExplorer() {
   const handleCSVUpload = useCallback(async (data: any[]) => {
     console.log("[UI] 🟢 handleCSVUpload called with", data.length, "items");
     console.trace("[UI] handleCSVUpload call stack:");
-    
+
     setCsvData(data);
     setIsProcessing(true);
 
