@@ -8,12 +8,14 @@ Follow these steps to install and run the NASA Exoplanet application using **Doc
 
 See the NASA Exoplanet App in action:
 
-https://github.com/user-attachments/assets/preview.mp4
+https://github.com/developpementwebbusiness/assets/preview.mp4
 
 <details>
 <summary>Can't see the video? Click here for alternative view</summary>
 
-![Video Preview](./assets/preview.mp4)
+<video src="./assets/preview.mp4" controls width="700">
+   Your browser does not support the video tag. You can <a href="./assets/preview.mp4">download the video here</a> or view the `DemoOverview.mp4` file in the root directory.
+</video>
 
 **Note:** If the video doesn't play, you can [download it here](./assets/preview.mp4) or view the `DemoOverview.mp4` file in the root directory.
 
@@ -51,15 +53,18 @@ You can either **clone** or **download** the project.
    ```
 
 ### Option 2 — Clone via Git
+
 Alternatively, you can clone the repository manually:
 Open your terminal or command prompt and run:
 
 ```bash
 git clone https://github.com/developpementwebbusiness/Nasa-Exoplanet.git
 ```
+
 ⚠️ Note: You must have Git installed on your system to use this command.
 If you don’t have it yet, download and install it from the official website:
 👉 https://git-scm.com/downloads
+
 ## ▶️ Launching the App
 
 You can launch the app directly by navigating into the Nasa-Exoplanet folder and double-clicking the file:
@@ -99,6 +104,7 @@ Once inside the project directory, run the following command to build and start 
 ```bash
 docker compose up --build
 ```
+
 With everything done it should look like this in the **Command Prompt** (Windows) :
 
 <img width="2326" height="542" alt="Docker Compose Windows" src="https://github.com/user-attachments/assets/8e596af6-17f1-4d9d-8eed-f54de7004c69" />
@@ -108,6 +114,7 @@ With everything done it should look like this in the **Command Prompt** (Windows
 ```bash
 sudo docker compose up --build
 ```
+
 The first launch might take upward of 10 minutes to set everything up.
 
 ---
