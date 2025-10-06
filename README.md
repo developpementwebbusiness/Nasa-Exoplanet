@@ -4,6 +4,23 @@ Follow these steps to install and run the NASA Exoplanet application using **Doc
 
 ---
 
+## 🎥 Preview
+
+See the NASA Exoplanet App in action:
+
+https://github.com/user-attachments/assets/preview.mp4
+
+<details>
+<summary>Can't see the video? Click here for alternative view</summary>
+
+![Video Preview](./assets/preview.mp4)
+
+**Note:** If the video doesn't play, you can [download it here](./assets/preview.mp4) or view the `DemoOverview.mp4` file in the root directory.
+
+</details>
+
+---
+
 ## 🧩 Prerequisites
 
 Before you begin, ensure you have **Docker Desktop** installed on your machine.
