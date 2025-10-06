@@ -45,30 +45,35 @@ This application is designed for researchers, astronomers, and space enthusiasts
 ## ✨ Key Features
 
 ### 🚀 Data Upload & Processing
+
 - **Multiple Format Support**: CSV, Excel (.xlsx/.xls), JSON, and TXT files
 - **Intelligent Column Mapping**: Automatically maps your data columns to the required format
 - **Batch Processing**: Handles large datasets (5000+ candidates) with automatic batching
 - **Data Cleaning**: Removes comment lines and empty rows automatically
 
 ### 🧠 AI-Powered Analysis
+
 - **Real-time Predictions**: Get instant AI classifications for all candidates
 - **Confidence Scores**: View probability scores (0-100%) for each prediction
 - **Fallback Mode**: Works offline with mock predictions if API is unavailable
 - **Recheck Functionality**: Re-analyze data after model updates
 
 ### 📊 Interactive Visualization
+
 - **Probability Graph**: Visual representation of AI confidence scores
 - **Color-coded Classifications**: Easy identification of exoplanets, false positives, and uncertain cases
 - **Detailed Data Table**: Sortable, searchable table with all candidate information
 - **Candidate Modals**: Deep-dive view for individual exoplanet candidates
 
 ### 👨‍🔬 Manual Classification
+
 - **Expert Review**: Classify candidates as exoplanet, not exoplanet, or unsure
 - **Comment System**: Add detailed notes and observations for each candidate
 - **Progress Tracking**: Visual indicators show classification progress
 - **Navigation**: Easy browsing through candidates with keyboard shortcuts
 
 ### 🎯 Model Management
+
 - **Custom Training**: Train new AI models using your classifications
 - **Training Datasets**: Upload pre-labeled datasets for model training
 - **Model Export/Import**: Download and share trained models
@@ -76,6 +81,7 @@ This application is designed for researchers, astronomers, and space enthusiasts
 - **Version Control**: Track model versions and performance metrics
 
 ### 🎨 Modern UI/UX
+
 - **Dark/Light Mode**: System-aware theme with manual toggle
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
 - **Smooth Animations**: Polished interactions with Framer Motion
@@ -86,11 +92,13 @@ This application is designed for researchers, astronomers, and space enthusiasts
 ## 🛠 Technology Stack
 
 ### Frontend Framework
+
 - **Next.js 15.5.4**: React framework with App Router and Turbopack
 - **React 19.0.0**: Latest React with concurrent features
 - **TypeScript 5**: Type-safe development
 
 ### UI Components
+
 - **Radix UI**: Accessible, unstyled component primitives
 - **Tailwind CSS 4.1.9**: Utility-first CSS framework
 - **Framer Motion 11.15**: Animation library
@@ -98,10 +106,12 @@ This application is designed for researchers, astronomers, and space enthusiasts
 - **Recharts 2.15**: Chart and data visualization library
 
 ### Data Processing
+
 - **PapaParse 5.4.1**: CSV parsing and processing
 - **Next Themes 0.4.4**: Theme management (dark/light mode)
 
 ### Development Tools
+
 - **PostCSS**: CSS processing
 - **ESLint**: Code linting
 - **TypeScript ESLint**: TypeScript-specific linting
@@ -156,6 +166,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
 **Optional Variables:**
+
 - `NEXT_PUBLIC_API_BASE_URL`: Python backend URL (default: `http://localhost:8000`)
 
 ### 4. Start the Python Backend
@@ -182,6 +193,7 @@ bun dev
 ```
 
 The application will be available at:
+
 - **Local**: [http://localhost:3000](http://localhost:3000)
 - **Network**: Check your terminal for the network address
 
@@ -192,16 +204,19 @@ The application will be available at:
 ### 1. Uploading Data
 
 #### Supported File Formats
+
 - **CSV** (`.csv`): Comma-separated values
 - **Excel** (`.xlsx`, `.xls`): Microsoft Excel spreadsheets
 - **JSON** (`.json`): JavaScript Object Notation
 - **TXT** (`.txt`): Plain text with comma-separated values
 
 #### Upload Methods
+
 1. **Drag & Drop**: Drag your data file into the upload area
 2. **File Browser**: Click "Select Data File" to choose from your computer
 
 #### Column Mapping
+
 After upload, you'll see the **Column Mapper** interface:
 
 1. **Review Your Columns**: See all column names from your file
@@ -210,6 +225,7 @@ After upload, you'll see the **Column Mapper** interface:
 4. **Confirm or Cancel**: Apply mappings or cancel to re-upload
 
 **Required Features (35 total):**
+
 ```
 OrbitalPeriod, OPup, OPdown, TransEpoch, TEup, TEdown,
 Impact, ImpactUp, ImpactDown, TransitDur, DurUp, DurDown,
@@ -220,6 +236,7 @@ LogGUp, LogGDown, StellarRadius, SradUp, SradDown, RA, Dec, KeplerMag
 ```
 
 #### Processing
+
 - **AI Analysis**: Automatic classification begins immediately after upload
 - **Batch Processing**: Large datasets (5000+ candidates) are processed in batches
 - **Progress Indicator**: Visual feedback during processing
@@ -232,7 +249,9 @@ LogGUp, LogGDown, StellarRadius, SradUp, SradDown, RA, Dec, KeplerMag
 After data upload, you'll see the **Overview** tab with comprehensive statistics and visualizations.
 
 #### Statistics Panel
+
 Displays real-time metrics:
+
 - **Total Candidates**: Number of loaded exoplanet candidates
 - **Exoplanets**: Confirmed exoplanets (manually classified)
 - **Not Exoplanets**: False positives (manually classified)
@@ -240,7 +259,9 @@ Displays real-time metrics:
 - **Average Confidence**: Mean AI confidence score across all predictions
 
 #### Probability Graph
+
 Interactive confidence visualization:
+
 - **X-axis**: Candidate index (numbered 1, 2, 3, ...)
 - **Y-axis**: AI confidence score (0-100%)
 - **Color Coding**:
@@ -250,6 +271,7 @@ Interactive confidence visualization:
   - 🔵 **Blue**: Unclassified
 
 **Interactions:**
+
 - **Hover**: View detailed information for each candidate
 - **Click**: Select a candidate to view in the classification panel
 - **Double-Click**: Open detailed modal for the candidate
@@ -261,12 +283,14 @@ Interactive confidence visualization:
 #### Classification Panel Features
 
 **Navigation:**
+
 - **Previous/Next Buttons**: Move through candidates sequentially
 - **Jump to Index**: Type a candidate number to jump directly
 - **Keyboard Shortcuts**: Use arrow keys for quick navigation
 
 **Candidate Information:**
 Displays key data for the selected candidate:
+
 - **Name**: Candidate identifier (KOI name, Kepler name, or auto-generated)
 - **AI Prediction**: Model's classification (Exoplanet / False Positive)
 - **Confidence Score**: AI confidence percentage
@@ -274,17 +298,20 @@ Displays key data for the selected candidate:
 
 **Classification Actions:**
 Three classification options:
+
 1. **✓ Exoplanet** (Green): Confirmed exoplanet
 2. **✗ Not Exoplanet** (Red): False positive
 3. **? Unsure** (Yellow): Requires further analysis
 
 **Comment System:**
+
 - Add detailed observations and notes
 - Markdown support for rich text formatting
 - Comments saved automatically with classification
 - Visible in exported data and training datasets
 
 **Progress Tracking:**
+
 - Visual indicator shows classification progress
 - Percentage completed
 - Count of classified vs. total candidates
@@ -298,27 +325,32 @@ Switch to the **Detailed Data** tab for comprehensive table view.
 #### Data Table Features
 
 **Column Display:**
+
 - All 35 input features
 - AI prediction and confidence score
 - Manual classification (if assigned)
 - Color-coded status indicators
 
 **Sorting:**
+
 - Click column headers to sort
 - Multi-level sorting support
 - Sort by confidence, name, any parameter
 
 **Filtering:**
+
 - Search across all columns
 - Filter by classification status
 - Filter by confidence ranges
 
 **Row Actions:**
+
 - Click any row to select the candidate
 - Double-click to open detailed modal
 - Keyboard navigation (arrow keys)
 
 **Export Options:**
+
 - Download filtered/sorted data as CSV
 - Export with or without classifications
 - Include comments in export
@@ -330,21 +362,25 @@ Switch to the **Detailed Data** tab for comprehensive table view.
 #### Training New Models
 
 **Requirements:**
+
 - **Option 1**: Manually classify at least 10 candidates in the app
 - **Option 2**: Upload a pre-labeled training dataset (CSV format)
 
 **Training Steps:**
 
 1. **Choose Training Data:**
+
    - Use your manual classifications from the app, OR
    - Upload a CSV file with pre-labeled training data
 
 2. **Enter Model Name:**
+
    - Use lowercase letters, numbers, and underscores only
    - Example: `my_exoplanet_model` or `kepler_2025_v1`
    - Name must be unique
 
 3. **Start Training:**
+
    - Click "Train Model" button
    - Training runs on the Python backend
    - Wait for completion (typically 30-60 seconds)
@@ -356,11 +392,13 @@ Switch to the **Detailed Data** tab for comprehensive table view.
 
 **Training Dataset Format:**
 If uploading a training CSV, it must include:
+
 - All 35 required features (columns)
 - A `label` column (1 = exoplanet, 0 = not exoplanet)
 - Optional `comment` column for notes
 
 Example training CSV structure:
+
 ```csv
 OrbitalPeriod,OPup,OPdown,...,KeplerMag,label,comment
 2.7,0.0,0.0,...,15.4,1,"Confirmed by spectroscopy"
@@ -370,18 +408,21 @@ OrbitalPeriod,OPup,OPdown,...,KeplerMag,label,comment
 #### Model Library
 
 **Viewing Models:**
+
 - All trained models listed with metadata
 - Default model marked with a star ⭐
 - Model version and type displayed
 - Training sample count shown
 
 **Model Actions:**
+
 - **Download**: Export model as ZIP file (includes weights, scaler, encoder)
 - **Import**: Upload previously exported models
 - **Refresh**: Update the model list from the server
 
 **Model Files:**
 Each exported model ZIP contains:
+
 ```
 model_name.zip
 ├── model_weights.pkl      # Neural network weights
@@ -390,6 +431,7 @@ model_name.zip
 ```
 
 **Using Custom Models:**
+
 1. Train a model in the app
 2. Download the model ZIP file
 3. Share with colleagues or use on another machine
@@ -400,7 +442,9 @@ model_name.zip
 ## 🏗 Component Architecture
 
 ### Main Application (`app/page.tsx`)
+
 Central component that orchestrates all functionality:
+
 - State management for CSV data, predictions, and classifications
 - API communication
 - Component coordination
@@ -408,63 +452,81 @@ Central component that orchestrates all functionality:
 ### Core Components
 
 #### `CSVUploader`
+
 Handles all file upload and processing:
+
 - Drag-and-drop interface
 - Multiple format parsing (CSV, Excel, JSON, TXT)
 - Comment line removal
 - Column mapper integration
 
 #### `ColumnMapper`
+
 Smart column mapping interface:
+
 - Displays uploaded column names
 - Suggests standard name mappings
 - Validates required features
 - Applies transformations
 
 #### `ProbabilityGraph`
+
 Interactive confidence visualization:
+
 - Recharts-based scatter plot
 - Color-coded by classification
 - Click and hover interactions
 - Responsive design
 
 #### `ClassificationPanel`
+
 Manual classification interface:
+
 - Candidate navigation
 - Classification buttons
 - Comment system
 - Progress tracking
 
 #### `DataTable`
+
 Comprehensive data grid:
+
 - All candidate data display
 - Sorting and filtering
 - Row selection
 - Export functionality
 
 #### `CandidateModal`
+
 Detailed candidate information:
+
 - Full parameter display
 - AI prediction details
 - Classification history
 - Quick classification actions
 
 #### `ModelManager`
+
 AI model training and management:
+
 - Training interface
 - Model library
 - Export/import functionality
 - Progress indicators
 
 #### `StatsOverview`
+
 Real-time statistics display:
+
 - Total candidates
 - Classification counts
 - Average confidence
 - Animated counters
 
 #### `ThemeToggle`
+
 Theme management:
+
 - Dark/light mode switch
 - System preference detection
 - Persistent storage
@@ -480,28 +542,33 @@ The application uses a type-safe API client for communication with the Python ba
 #### Key Functions
 
 **`predict(data, userId)`**
+
 - Sends candidate data for AI classification
 - Handles batch processing for large datasets
 - Automatic retry on failure
 - Returns predictions with scores and labels
 
 **`csvRowToExoplanetData(row, index)`**
+
 - Converts CSV rows to API format
 - Maps various column name formats
 - Fills missing values with defaults
 - Ensures exactly 35 features
 
 **`checkApiHealth()`**
+
 - Verifies backend availability
 - 5-second timeout
 - Used for fallback mode detection
 
 **`getModelInfo()`**
+
 - Retrieves model metadata
 - Feature count and names
 - Model architecture details
 
 **`downloadModel(modelId)`**
+
 - Exports trained models
 - Returns ZIP blob
 - Supports specific or all models
@@ -509,6 +576,7 @@ The application uses a type-safe API client for communication with the Python ba
 #### Error Handling
 
 The client implements robust error handling:
+
 - **Network Errors**: Automatic fallback to mock predictions
 - **Timeouts**: 5-second timeout on health checks
 - **Invalid Data**: Validation before sending
@@ -517,6 +585,7 @@ The client implements robust error handling:
 #### Batch Processing
 
 For large datasets (>5000 candidates):
+
 1. Splits data into batches of 5000
 2. Sends batches sequentially
 3. Combines results
@@ -529,12 +598,15 @@ For large datasets (>5000 candidates):
 ### Input Data Requirements
 
 #### Column Names
+
 The application accepts multiple naming conventions:
+
 - **Standard names**: `OrbitalPeriod`, `TransitDepth`, etc.
 - **KOI format**: `koi_period`, `koi_depth`, etc.
 - **Custom names**: Mapped via the Column Mapper
 
 #### Feature Types
+
 - **Numeric**: All 35 features must be numeric
 - **Missing Values**: Replaced with 0.0
 - **Invalid Values**: NaN and Infinity cause errors
@@ -550,17 +622,21 @@ KOI-456,5.4,0.1,-0.1,180.2,...
 ### Output Data Format
 
 #### Prediction Results
+
 Each prediction includes:
+
 ```typescript
 {
-  name: string;         // Candidate identifier
-  score: number;        // Confidence (0.0 to 1.0)
-  label: boolean;       // true = exoplanet, false = not
+  name: string; // Candidate identifier
+  score: number; // Confidence (0.0 to 1.0)
+  label: boolean; // true = exoplanet, false = not
 }
 ```
 
 #### Classifications
+
 Manual classifications stored as:
+
 ```typescript
 {
   type: "exoplanet" | "not_exoplanet" | "unsure";
@@ -625,6 +701,7 @@ npm run lint
 ### Development Server
 
 The development server includes:
+
 - **Hot Module Replacement**: Instant updates without page refresh
 - **Fast Refresh**: Preserves component state during edits
 - **Turbopack**: Next-generation bundler for faster builds
@@ -641,6 +718,7 @@ npm run start
 ```
 
 Production builds include:
+
 - Minification and compression
 - Tree-shaking (removes unused code)
 - Image optimization
@@ -656,11 +734,13 @@ Production builds include:
 #### 1. API Connection Failed
 
 **Symptoms:**
+
 - "API unavailable" message
 - Mock predictions instead of real AI predictions
 - Connection timeout errors
 
 **Solutions:**
+
 - Ensure Python backend is running: `cd Python/server && python app.py`
 - Check API URL in `.env.local`: `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
 - Verify backend is accessible: Visit `http://localhost:8000/docs`
@@ -669,11 +749,13 @@ Production builds include:
 #### 2. CSV Upload Fails
 
 **Symptoms:**
+
 - File not recognized
 - Parsing errors
 - Wrong number of features
 
 **Solutions:**
+
 - Ensure file format is supported (CSV, Excel, JSON, TXT)
 - Check for correct encoding (UTF-8 preferred)
 - Remove special characters from column names
@@ -683,11 +765,13 @@ Production builds include:
 #### 3. Model Training Fails
 
 **Symptoms:**
+
 - Training never completes
 - "Insufficient data" error
 - Server error during training
 
 **Solutions:**
+
 - Classify at least 10 candidates manually
 - Or upload a valid training dataset CSV
 - Ensure Python backend has write permissions
@@ -697,11 +781,13 @@ Production builds include:
 #### 4. Slow Performance
 
 **Symptoms:**
+
 - Laggy UI interactions
 - Slow graph rendering
 - Long prediction times
 
 **Solutions:**
+
 - Use batch processing for large datasets (>5000 rows)
 - Close unnecessary browser tabs
 - Clear browser cache
@@ -711,10 +797,12 @@ Production builds include:
 #### 5. Theme Toggle Not Working
 
 **Symptoms:**
+
 - Dark mode not applying
 - Theme resets on page reload
 
 **Solutions:**
+
 - Clear browser local storage
 - Check browser console for errors
 - Ensure cookies are enabled
@@ -750,32 +838,38 @@ We welcome contributions from the community!
 ### How to Contribute
 
 1. **Fork the Repository**
+
    ```bash
    git fork https://github.com/developpementwebbusiness/Nasa-Exoplanet.git
    ```
 
 2. **Create a Feature Branch**
+
    ```bash
    git checkout -b feature/amazing-feature
    ```
 
 3. **Make Your Changes**
+
    - Follow existing code style
    - Add comments for complex logic
    - Update documentation
 
 4. **Test Your Changes**
+
    ```bash
    npm run lint
    npm run build
    ```
 
 5. **Commit with Descriptive Messages**
+
    ```bash
    git commit -m "Add: New feature for batch export"
    ```
 
 6. **Push to Your Fork**
+
    ```bash
    git push origin feature/amazing-feature
    ```
@@ -797,6 +891,7 @@ We welcome contributions from the community!
 ### Testing
 
 Before submitting:
+
 - Test with different data formats
 - Verify API integration works
 - Check responsive design (mobile, tablet, desktop)
