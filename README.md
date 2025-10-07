@@ -8,14 +8,22 @@ Follow these steps to install and run the NASA Exoplanet application using **Doc
 
 See the NASA Exoplanet App in action:
 
-https://github.com/developpementwebbusiness/Nasa-Exoplanet/raw/refs/heads/main/assets/preview.mp4
+
+<p align="center">
+   <b>Watch the video demo on YouTube:</b><br>
+   <a href="https://youtu.be/AlLqZ2ZR-TU" target="_blank">
+      <img src="https://img.youtube.com/vi/AlLqZ2ZR-TU/hqdefault.jpg" alt="YouTube Preview" width="480" style="border-radius:8px;">
+   </a>
+</p>
 
 <details>
+
 <summary>Can't see the video? Click here for alternative view</summary>
 
-<video src="./assets/preview.mp4" controls width="700">
-   Your browser does not support the video tag. You can <a href="./assets/preview.mp4">download the video here</a> or view the `DemoOverview.mp4` file in the root directory.
-</video>
+
+**GIF Preview:**
+
+![Preview GIF](./assets/preview.gif)
 
 **Note:** If the video doesn't play, you can [download it here](./assets/preview.mp4) or view the `DemoOverview.mp4` file in the root directory.
 
