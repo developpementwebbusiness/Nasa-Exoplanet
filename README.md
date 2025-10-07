@@ -8,7 +8,6 @@ Follow these steps to install and run the NASA Exoplanet application using **Doc
 
 See the NASA Exoplanet App in action:
 
-
 <p align="center">
    <b>Watch the video demo on YouTube:</b><br>
    <a href="https://youtu.be/AlLqZ2ZR-TU" target="_blank">
@@ -19,7 +18,6 @@ See the NASA Exoplanet App in action:
 <details>
 
 <summary>Can't see the video? Click here for alternative view</summary>
-
 
 **GIF Preview:**
 
